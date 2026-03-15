@@ -37,9 +37,27 @@ const html = `<!doctype html>
       overflow: hidden;
     }
     .hero {
+      position: relative;
       padding: 42px 34px 30px;
       background: linear-gradient(135deg, var(--blue-soft), var(--pink-soft));
       border-bottom: 1px solid #e5e7eb;
+    }
+    .login-top {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 9px 14px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #1e3a8a;
+      background: #fff;
+      border: 1px solid #bfdbfe;
+      box-shadow: 0 6px 14px rgba(96,165,250,.18);
     }
     .badge {
       display: inline-block;
@@ -107,6 +125,7 @@ const html = `<!doctype html>
 <body>
   <main class="card">
     <section class="hero">
+      <a class="login-top" href="/login">Login</a>
       <span class="badge">SodeClick V2 • Preview</span>
       <h1>เริ่มต้น SodeClick V2</h1>
       <p class="sub">ธีมหลัก: ขาว • ฟ้า • ชมพูอ่อน พร้อมเริ่มพัฒนาฟีเจอร์จริง</p>
@@ -127,10 +146,41 @@ const html = `<!doctype html>
 </body>
 </html>`;
 
+const loginHtml = `<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login - SodeClick V2</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background:#f8fbff; margin:0; padding:24px; }
+    .box { max-width:420px; margin:80px auto; background:#fff; border:1px solid #dbeafe; border-radius:16px; padding:22px; }
+    input { width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:10px; margin-bottom:10px; }
+    button { width:100%; padding:11px; border:0; border-radius:10px; background:linear-gradient(135deg,#60a5fa,#f9a8d4); color:#fff; font-weight:700; }
+    a { display:inline-block; margin-top:10px; color:#2563eb; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>เข้าสู่ระบบ SodeClick V2</h2>
+    <input placeholder="อีเมล" />
+    <input placeholder="รหัสผ่าน" type="password" />
+    <button>Login</button>
+    <a href="/">← กลับหน้าแรก</a>
+  </div>
+</body>
+</html>`;
+
 const server = http.createServer((req, res) => {
   if (req.url === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'healthy', service: 'sodeclick-v2' }));
+    return;
+  }
+
+  if (req.url === '/login') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(loginHtml);
     return;
   }
 
