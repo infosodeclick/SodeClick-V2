@@ -3,8 +3,13 @@ const crypto = require('crypto');
 
 const port = process.env.PORT || 3000;
 
-const ADMIN_USER = 'admin';
-const ADMIN_PASS = '123456';
+// ===== Admin Accounts (MVP in-memory) =====
+// NOTE: For production should move to DB + password hash
+const adminAccounts = [
+  { username: 'admin', password: '123456', role: 'super_admin', displayName: 'Super Admin' },
+  { username: 'manager', password: '123456', role: 'admin', displayName: 'Admin Manager' },
+  { username: 'staff', password: '123456', role: 'staff', displayName: 'Staff' },
+];
 
 const sessions = new Map();
 
@@ -15,6 +20,22 @@ let members = [
   { id: 'U004', name: 'Fah', email: 'fah@example.com', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 40) },
   { id: 'U005', name: 'Pear', email: 'pear@example.com', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 200) },
 ];
+
+let auditLogs = [];
+
+function addAudit(action, actor, details = '') {
+  auditLogs.unshift({
+    id: crypto.randomBytes(4).toString('hex'),
+    action,
+    actor: actor || 'system',
+    details,
+    at: new Date(),
+  });
+
+  if (auditLogs.length > 500) {
+    auditLogs = auditLogs.slice(0, 500);
+  }
+}
 
 function parseCookies(req) {
   const cookie = req.headers.cookie || '';
@@ -42,15 +63,41 @@ function parseBody(req) {
   });
 }
 
-function isAuthed(req) {
+function getSession(req) {
   const sid = parseCookies(req).sid;
-  return sid && sessions.has(sid);
+  if (!sid) return null;
+  return sessions.get(sid) || null;
 }
 
 function requireAuth(req, res) {
-  if (!isAuthed(req)) {
-    res.writeHead(302, { Location: '/admin/login' });
-    res.end();
+  const session = getSession(req);
+  if (!session) {
+    redirect(res, '/admin/login');
+    return null;
+  }
+  return session;
+}
+
+function hasPermission(role, action) {
+  const matrix = {
+    super_admin: ['view_dashboard', 'view_members', 'edit_member', 'block_member', 'delete_member', 'view_audit'],
+    admin: ['view_dashboard', 'view_members', 'edit_member', 'block_member', 'view_audit'],
+    staff: ['view_dashboard', 'view_members'],
+  };
+
+  return matrix[role]?.includes(action);
+}
+
+function requirePermission(session, action, res) {
+  if (!hasPermission(session.role, action)) {
+    res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(htmlPage('403 - Forbidden', `
+      <main class="card">
+        <h2>403 - ไม่มีสิทธิ์เข้าถึง</h2>
+        <p>บัญชีของคุณ (${session.username}) ไม่มีสิทธิ์สำหรับคำสั่งนี้</p>
+        <a class="btn" href="/admin/dashboard">กลับแดชบอร์ด</a>
+      </main>
+    `));
     return false;
   }
   return true;
@@ -81,17 +128,19 @@ function htmlPage(title, body) {
       min-height: 100vh;
       padding: clamp(12px, 2.5vw, 24px);
     }
-    .wrap { max-width: 1100px; margin: 0 auto; }
+    .wrap { max-width: 1160px; margin: 0 auto; }
     .card {
       background: #fff;
       border: 1px solid #e5e7eb;
       border-radius: 16px;
       box-shadow: 0 12px 28px rgba(96,165,250,.12);
       padding: 16px;
+      margin-bottom: 12px;
     }
     .head {
       display:flex; justify-content:space-between; align-items:center; gap:10px;
       margin-bottom: 12px;
+      flex-wrap: wrap;
     }
     .btn {
       display:inline-flex; align-items:center; justify-content:center;
@@ -99,22 +148,36 @@ function htmlPage(title, body) {
       border-radius:10px; padding:8px 12px; text-decoration:none; font-weight:700;
       cursor:pointer;
     }
+    .btn[disabled] { opacity:.5; cursor:not-allowed; }
     .btn-primary { background: linear-gradient(135deg,var(--blue),var(--pink)); color:#fff; border:0; }
     .grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap:10px; }
     .stat { border:1px solid #e5e7eb; border-radius:12px; background:#fff; padding:12px; }
     .k { font-size: 12px; color:#64748b; }
     .v { font-size: 24px; font-weight:800; color:#1e3a8a; }
-    table { width:100%; border-collapse: collapse; }
-    th,td { border-bottom:1px solid #e5e7eb; text-align:left; padding:10px 8px; font-size:14px; }
+    .topline { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .pill { background:#eef2ff; color:#3730a3; border-radius:999px; padding:4px 10px; font-size:12px; font-weight:700; }
+    table { width:100%; border-collapse: collapse; min-width: 760px; }
+    th,td { border-bottom:1px solid #e5e7eb; text-align:left; padding:10px 8px; font-size:14px; vertical-align: top; }
     .actions { display:flex; gap:6px; flex-wrap:wrap; }
-    input, select { width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px; }
+    input, select {
+      width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:8px;
+      font-size: 14px;
+    }
     .login {
       max-width: 420px; margin: 8vh auto 0; background:#fff; border:1px solid #dbeafe;
       border-radius: 16px; padding:20px; box-shadow: 0 12px 30px rgba(96,165,250,.14);
     }
     .muted { color:#64748b; font-size:13px; }
+    .filters {
+      display:grid;
+      grid-template-columns: 1.2fr 180px auto;
+      gap:8px;
+      align-items:end;
+    }
+    .log-row { display:grid; grid-template-columns: 180px 160px 1fr; gap:8px; padding:10px; border-bottom:1px solid #e5e7eb; font-size:14px; }
     @media (max-width: 760px) {
-      th:nth-child(3), td:nth-child(3) { display:none; }
+      .filters { grid-template-columns: 1fr; }
+      .log-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -124,22 +187,30 @@ function htmlPage(title, body) {
 </html>`;
 }
 
-function startOfDay(d = new Date()) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
-function countSince(date) { return members.filter(m => m.createdAt >= date).length; }
+function startOfDay(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function countSince(date) {
+  return members.filter((m) => m.createdAt >= date).length;
+}
 
 function renderHome() {
   return htmlPage('SodeClick V2', `
-  <main class="card">
-    <div class="head">
-      <h2 style="margin:0">SodeClick V2</h2>
-      <a class="btn btn-primary" href="/admin/login">Login</a>
-    </div>
-    <p>ธีมหลัก: ขาว • ฟ้า • ชมพูอ่อน พร้อมเริ่มพัฒนาฟีเจอร์จริง</p>
-    <div class="grid" style="margin-top:12px">
-      <div class="stat"><div class="k">โครงระบบ</div><div class="v">พร้อม</div></div>
-      <div class="stat"><div class="k">Health</div><div class="v">OK</div></div>
-    </div>
-  </main>`);
+    <main class="card">
+      <div class="head">
+        <h2 style="margin:0">SodeClick V2</h2>
+        <a class="btn btn-primary" href="/admin/login">Login</a>
+      </div>
+      <p>ระบบหลังบ้าน V2 พร้อมใช้งานเบื้องต้นแล้ว</p>
+      <div class="grid" style="margin-top:12px">
+        <div class="stat"><div class="k">โครงระบบ</div><div class="v">พร้อม</div></div>
+        <div class="stat"><div class="k">Health</div><div class="v">OK</div></div>
+      </div>
+    </main>
+  `);
 }
 
 function renderAdminLogin(error = '') {
@@ -154,12 +225,12 @@ function renderAdminLogin(error = '') {
         <input name="password" type="password" required />
         <button class="btn btn-primary" style="width:100%;margin-top:12px" type="submit">Login</button>
       </form>
-      <p class="muted">ค่าเริ่มต้น: admin / 123456</p>
+      <p class="muted">บัญชีทดสอบ: admin/123456, manager/123456, staff/123456</p>
     </div>
   `);
 }
 
-function renderAdminDashboard() {
+function renderAdminDashboard(session) {
   const now = new Date();
   const day = startOfDay(now);
   const week = new Date(day); week.setDate(week.getDate() - 7);
@@ -175,9 +246,14 @@ function renderAdminDashboard() {
   return htmlPage('Dashboard - Admin', `
     <main class="card">
       <div class="head">
-        <h2 style="margin:0">แดชบอร์ดหลังบ้าน</h2>
-        <div style="display:flex;gap:8px">
+        <div class="topline">
+          <h2 style="margin:0">แดชบอร์ดหลังบ้าน</h2>
+          <span class="pill">ผู้ใช้: ${session.username}</span>
+          <span class="pill">สิทธิ์: ${session.role}</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
           <a class="btn" href="/admin/members">จัดการสมาชิก</a>
+          <a class="btn" href="/admin/audit">Audit Log</a>
           <a class="btn" href="/admin/logout">ออกจากระบบ</a>
         </div>
       </div>
@@ -193,15 +269,34 @@ function renderAdminDashboard() {
   `);
 }
 
-function renderMembersPage() {
-  const rows = members.map((m) => `
+function renderMembersPage(session, queryParams) {
+  const q = (queryParams.get('q') || '').trim().toLowerCase();
+  const status = (queryParams.get('status') || 'all').trim();
+
+  let filtered = [...members];
+  if (q) {
+    filtered = filtered.filter((m) =>
+      m.name.toLowerCase().includes(q) ||
+      m.email.toLowerCase().includes(q) ||
+      m.id.toLowerCase().includes(q)
+    );
+  }
+  if (status !== 'all') {
+    filtered = filtered.filter((m) => m.status === status);
+  }
+
+  const canEdit = hasPermission(session.role, 'edit_member');
+  const canBlock = hasPermission(session.role, 'block_member');
+  const canDelete = hasPermission(session.role, 'delete_member');
+
+  const rows = filtered.map((m) => `
     <tr>
       <td>${m.id}</td>
       <td>
         <form method="POST" action="/admin/members/${m.id}/update" style="display:grid;gap:6px">
-          <input name="name" value="${m.name}" />
-          <input name="email" value="${m.email}" />
-          <button class="btn" type="submit">บันทึก</button>
+          <input name="name" value="${m.name}" ${canEdit ? '' : 'disabled'} />
+          <input name="email" value="${m.email}" ${canEdit ? '' : 'disabled'} />
+          <button class="btn" type="submit" ${canEdit ? '' : 'disabled'}>บันทึก</button>
         </form>
       </td>
       <td>${m.createdAt.toLocaleDateString('th-TH')}</td>
@@ -209,10 +304,10 @@ function renderMembersPage() {
       <td>
         <div class="actions">
           <form method="POST" action="/admin/members/${m.id}/toggle-block">
-            <button class="btn" type="submit">${m.status === 'blocked' ? 'ปลดบล็อก' : 'บล็อก'}</button>
+            <button class="btn" type="submit" ${canBlock ? '' : 'disabled'}>${m.status === 'blocked' ? 'ปลดบล็อก' : 'บล็อก'}</button>
           </form>
           <form method="POST" action="/admin/members/${m.id}/delete" onsubmit="return confirm('ยืนยันลบสมาชิก?')">
-            <button class="btn" type="submit" style="color:#dc2626;border-color:#fecaca">ลบ</button>
+            <button class="btn" type="submit" style="color:#dc2626;border-color:#fecaca" ${canDelete ? '' : 'disabled'}>ลบ</button>
           </form>
         </div>
       </td>
@@ -222,20 +317,70 @@ function renderMembersPage() {
   return htmlPage('Members - Admin', `
     <main class="card">
       <div class="head">
-        <h2 style="margin:0">รายชื่อสมาชิกทั้งหมด</h2>
-        <div style="display:flex;gap:8px">
+        <div class="topline">
+          <h2 style="margin:0">รายชื่อสมาชิกทั้งหมด</h2>
+          <span class="pill">ผลลัพธ์ ${filtered.length} / ${members.length}</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
           <a class="btn" href="/admin/dashboard">กลับแดชบอร์ด</a>
+          <a class="btn" href="/admin/audit">Audit Log</a>
           <a class="btn" href="/admin/logout">ออกจากระบบ</a>
         </div>
       </div>
+
+      <form method="GET" action="/admin/members" class="filters" style="margin-bottom:12px">
+        <div>
+          <label class="muted">ค้นหา (ชื่อ/อีเมล/ID)</label>
+          <input name="q" value="${q}" placeholder="เช่น nina หรือ U001" />
+        </div>
+        <div>
+          <label class="muted">สถานะ</label>
+          <select name="status">
+            <option value="all" ${status === 'all' ? 'selected' : ''}>ทั้งหมด</option>
+            <option value="active" ${status === 'active' ? 'selected' : ''}>ปกติ</option>
+            <option value="blocked" ${status === 'blocked' ? 'selected' : ''}>บล็อก</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" type="submit">ค้นหา/กรอง</button>
+      </form>
 
       <div style="overflow:auto">
         <table>
           <thead>
             <tr><th>ID</th><th>ข้อมูลสมาชิก (แก้ไขได้)</th><th>วันที่สมัคร</th><th>สถานะ</th><th>จัดการ</th></tr>
           </thead>
-          <tbody>${rows || '<tr><td colspan="5">ยังไม่มีสมาชิก</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="5">ไม่พบข้อมูลสมาชิกตามเงื่อนไข</td></tr>'}</tbody>
         </table>
+      </div>
+      <p class="muted" style="margin-top:8px">สิทธิ์ปัจจุบัน: ${session.role} | staff=ดูอย่างเดียว, admin=แก้ไข/บล็อก, super_admin=ลบได้</p>
+    </main>
+  `);
+}
+
+function renderAuditPage(session) {
+  const rows = auditLogs.map((log) => `
+    <div class="log-row">
+      <div>${log.at.toLocaleString('th-TH')}</div>
+      <div><strong>${log.actor}</strong></div>
+      <div>${log.action} ${log.details ? `- ${log.details}` : ''}</div>
+    </div>
+  `).join('');
+
+  return htmlPage('Audit Log - Admin', `
+    <main class="card">
+      <div class="head">
+        <h2 style="margin:0">Audit Log</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn" href="/admin/dashboard">กลับแดชบอร์ด</a>
+          <a class="btn" href="/admin/members">จัดการสมาชิก</a>
+        </div>
+      </div>
+
+      <div style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;background:#fff">
+        <div class="log-row" style="font-weight:700;background:#f8fafc">
+          <div>เวลา</div><div>ผู้ใช้งาน</div><div>เหตุการณ์</div>
+        </div>
+        ${rows || '<div class="log-row"><div>-</div><div>-</div><div>ยังไม่มีประวัติ</div></div>'}
       </div>
     </main>
   `);
@@ -277,9 +422,12 @@ const server = http.createServer(async (req, res) => {
 
   if (path === '/admin/login' && req.method === 'POST') {
     const body = await parseBody(req);
-    if (body.username === ADMIN_USER && body.password === ADMIN_PASS) {
+    const found = adminAccounts.find((u) => u.username === body.username && u.password === body.password);
+
+    if (found) {
       const sid = crypto.randomBytes(24).toString('hex');
-      sessions.set(sid, { user: body.username, createdAt: Date.now() });
+      sessions.set(sid, { username: found.username, role: found.role, displayName: found.displayName, createdAt: Date.now() });
+      addAudit('login', found.username, `role=${found.role}`);
       redirect(res, '/admin/dashboard', `sid=${sid}; HttpOnly; Path=/; SameSite=Lax; Max-Age=28800`);
       return;
     }
@@ -290,23 +438,41 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (path === '/admin/logout') {
+    const session = getSession(req);
     const sid = parseCookies(req).sid;
+    if (session) addAudit('logout', session.username, `role=${session.role}`);
     if (sid) sessions.delete(sid);
     redirect(res, '/admin/login', 'sid=; HttpOnly; Path=/; Max-Age=0');
     return;
   }
 
   if (path === '/admin/dashboard') {
-    if (!requireAuth(req, res)) return;
+    const session = requireAuth(req, res);
+    if (!session) return;
+    if (!requirePermission(session, 'view_dashboard', res)) return;
+
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(renderAdminDashboard());
+    res.end(renderAdminDashboard(session));
     return;
   }
 
   if (path === '/admin/members') {
-    if (!requireAuth(req, res)) return;
+    const session = requireAuth(req, res);
+    if (!session) return;
+    if (!requirePermission(session, 'view_members', res)) return;
+
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(renderMembersPage());
+    res.end(renderMembersPage(session, url.searchParams));
+    return;
+  }
+
+  if (path === '/admin/audit') {
+    const session = requireAuth(req, res);
+    if (!session) return;
+    if (!requirePermission(session, 'view_audit', res)) return;
+
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderAuditPage(session));
     return;
   }
 
@@ -315,26 +481,43 @@ const server = http.createServer(async (req, res) => {
   const deleteMatch = path.match(/^\/admin\/members\/(U\d+)\/delete$/);
 
   if (updateMatch && req.method === 'POST') {
-    if (!requireAuth(req, res)) return;
+    const session = requireAuth(req, res);
+    if (!session) return;
+    if (!requirePermission(session, 'edit_member', res)) return;
+
     const id = updateMatch[1];
     const body = await parseBody(req);
     members = members.map((m) => (m.id === id ? { ...m, name: body.name || m.name, email: body.email || m.email } : m));
+    addAudit('member_update', session.username, `member=${id}`);
     redirect(res, '/admin/members');
     return;
   }
 
   if (toggleMatch && req.method === 'POST') {
-    if (!requireAuth(req, res)) return;
+    const session = requireAuth(req, res);
+    if (!session) return;
+    if (!requirePermission(session, 'block_member', res)) return;
+
     const id = toggleMatch[1];
-    members = members.map((m) => (m.id === id ? { ...m, status: m.status === 'blocked' ? 'active' : 'blocked' } : m));
+    let changedTo = 'active';
+    members = members.map((m) => {
+      if (m.id !== id) return m;
+      changedTo = m.status === 'blocked' ? 'active' : 'blocked';
+      return { ...m, status: changedTo };
+    });
+    addAudit('member_toggle_block', session.username, `member=${id}, status=${changedTo}`);
     redirect(res, '/admin/members');
     return;
   }
 
   if (deleteMatch && req.method === 'POST') {
-    if (!requireAuth(req, res)) return;
+    const session = requireAuth(req, res);
+    if (!session) return;
+    if (!requirePermission(session, 'delete_member', res)) return;
+
     const id = deleteMatch[1];
     members = members.filter((m) => m.id !== id);
+    addAudit('member_delete', session.username, `member=${id}`);
     redirect(res, '/admin/members');
     return;
   }
