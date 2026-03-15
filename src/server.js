@@ -438,9 +438,9 @@ function renderUserApp(session) {
     function renderFeed() {
       const feed = document.getElementById('feed');
       feed.innerHTML = posts.map((p, idx) => {
-        const replies = (p.replies || []).map(r => `<div class="reply-item">${r}</div>`).join('');
-        const img = p.image ? `<img src="${p.image}" alt="post-image" />` : '';
-        return `
+        const replies = (p.replies || []).map(r => \`<div class="reply-item">${r}</div>\`).join('');
+        const img = p.image ? \`<img src="${p.image}" alt="post-image" />\` : '';
+        return \`
           <article class="post">
             <div class="post-head">
               <div class="avatar-sm"></div>
@@ -457,7 +457,7 @@ function renderUserApp(session) {
             <div class="row" style="margin-top:6px"><button class="btn" onclick="replyPost(${idx})">ตอบกลับ</button></div>
             <div class="replies">${replies}</div>
           </article>
-        `;
+        \`;
       }).join('');
     }
 
@@ -497,7 +497,7 @@ function renderUserApp(session) {
         pendingImage = reader.result;
         const box = document.getElementById('imagePreviewBox');
         box.classList.remove('hidden');
-        box.innerHTML = `<img src="${pendingImage}" style="max-width:120px;border:1px solid #e5e7eb;border-radius:8px" /> <button class="btn" id="clearImgBtn">ลบรูป</button>`;
+        box.innerHTML = \`<img src="${pendingImage}" style="max-width:120px;border:1px solid #e5e7eb;border-radius:8px" /> <button class="btn" id="clearImgBtn">ลบรูป</button>\`;
         document.getElementById('clearImgBtn').addEventListener('click', resetPendingImage);
       };
       reader.readAsDataURL(file);
