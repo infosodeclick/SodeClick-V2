@@ -341,12 +341,10 @@ function renderAdminDashboardV2(session, queryParams) {
     const values = [];
 
     if (range === 'day') {
-      for (let i = 6; i >= 0; i--) {
-        const s = new Date(day); s.setDate(day.getDate() - i);
-        const e = new Date(s); e.setDate(s.getDate() + 1);
-        labels.push(s.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit' }));
-        values.push(scopedMembers.filter((m) => m.createdAt >= s && m.createdAt < e).length);
-      }
+      const s = new Date(day);
+      const e = new Date(s); e.setDate(s.getDate() + 1);
+      labels.push('วันนี้');
+      values.push(scopedMembers.filter((m) => m.createdAt >= s && m.createdAt < e).length);
     } else if (range === 'week') {
       for (let i = 7; i >= 0; i--) {
         const s = new Date(day); s.setDate(day.getDate() - (i * 7));
@@ -415,7 +413,7 @@ function renderAdminDashboardV2(session, queryParams) {
         <div>
           <label class="muted">ช่วงเวลาแสดงกราฟ</label>
           <select name="range">
-            <option value="day" ${range === 'day' ? 'selected' : ''}>รายวัน (7 วัน)</option>
+            <option value="day" ${range === 'day' ? 'selected' : ''}>รายวัน (1 วัน)</option>
             <option value="week" ${range === 'week' ? 'selected' : ''}>รายสัปดาห์</option>
             <option value="month" ${range === 'month' ? 'selected' : ''}>รายเดือน</option>
             <option value="year" ${range === 'year' ? 'selected' : ''}>รายปี</option>
