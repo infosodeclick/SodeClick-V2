@@ -341,7 +341,7 @@ function renderUserApp(session) {
     .tool { border:1px solid #d1d5db; background:#fff; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; }
     .composer { padding:10px; border-bottom:1px solid #e5e7eb; display:grid; gap:8px; }
     .composer textarea { width:100%; border:1px solid #d1d5db; border-radius:10px; padding:10px; min-height:72px; font-family:inherit; }
-    .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; }
     .btn { border:1px solid #cbd5e1; background:#fff; border-radius:10px; padding:8px 12px; font-weight:700; cursor:pointer; }
     .btn-primary { background:linear-gradient(135deg,#60a5fa,#f9a8d4); color:#fff; border:0; }
     .feed { padding:8px 10px 14px; display:grid; gap:10px; }
@@ -383,17 +383,14 @@ function renderUserApp(session) {
     <section class="center">
       <div class="board">
         <div class="toolbar">
-          <button class="tool" id="pickImageBtn">📷 รูป</button>
           <button class="tool emoji-insert" data-emoji="😊">😊</button>
           <button class="tool emoji-insert" data-emoji="❤️">❤️</button>
           <button class="tool emoji-insert" data-emoji="😂">😂</button>
           <button class="tool">ออโต้ ▾</button>
-          <input id="imageInput" type="file" accept="image/*" class="hidden" />
         </div>
         <div class="composer">
           <textarea id="postText" placeholder="โพสต์อะไรดีวันนี้..."></textarea>
           <div class="row">
-            <div id="imagePreviewBox" class="hidden"></div>
             <button class="btn btn-primary" id="postBtn">โพสต์</button>
           </div>
         </div>
@@ -419,7 +416,6 @@ function renderUserApp(session) {
     ];
 
     let posts = [];
-    let pendingImage = null;
 
     function loadPosts() {
       try {
@@ -478,30 +474,7 @@ function renderUserApp(session) {
       renderFeed();
     }
 
-    function resetPendingImage() {
-      pendingImage = null;
-      const box = document.getElementById('imagePreviewBox');
-      box.classList.add('hidden');
-      box.innerHTML = '';
-    }
 
-    document.getElementById('pickImageBtn').addEventListener('click', () => {
-      document.getElementById('imageInput').click();
-    });
-
-    document.getElementById('imageInput').addEventListener('change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        pendingImage = reader.result;
-        const box = document.getElementById('imagePreviewBox');
-        box.classList.remove('hidden');
-        box.innerHTML = \`<img src="${pendingImage}" style="max-width:120px;border:1px solid #e5e7eb;border-radius:8px" /> <button class="btn" id="clearImgBtn">ลบรูป</button>\`;
-        document.getElementById('clearImgBtn').addEventListener('click', resetPendingImage);
-      };
-      reader.readAsDataURL(file);
-    });
 
     document.querySelectorAll('.emoji-insert').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -514,18 +487,17 @@ function renderUserApp(session) {
     document.getElementById('postBtn').addEventListener('click', () => {
       const ta = document.getElementById('postText');
       const text = (ta.value || '').trim();
-      if (!text && !pendingImage) return;
+      if (!text) return;
       posts.unshift({
         id: Date.now(),
         user: username,
         text,
-        image: pendingImage,
+        image: null,
         likes: 0,
         replies: [],
         at: new Date().toISOString(),
       });
       ta.value = '';
-      resetPendingImage();
       savePosts();
       renderFeed();
     });
