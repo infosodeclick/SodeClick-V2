@@ -172,7 +172,7 @@ function htmlPage(title, body) {
     .muted { color:#64748b; font-size:13px; }
     .filters {
       display:grid;
-      grid-template-columns: 1fr 180px 180px auto;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap:8px;
       align-items:end;
     }
@@ -305,15 +305,31 @@ function renderAdminDashboard(session) {
 }
 
 function renderAdminDashboardV2(session, queryParams) {
-  const range = (queryParams.get('range') || 'month').trim(); // day|week|month|year
+  const range = (queryParams.get('range') || 'month').trim(); // day|week|month|year|custom
   const status = (queryParams.get('status') || 'all').trim(); // all|active|blocked
   const gender = (queryParams.get('gender') || 'all').trim(); // all|male|female|other
+  const fromDateStr = (queryParams.get('from') || '').trim();
+  const toDateStr = (queryParams.get('to') || '').trim();
 
   const now = new Date();
   const day = startOfDay(now);
   const week = new Date(day); week.setDate(week.getDate() - 7);
   const month = new Date(day); month.setMonth(month.getMonth() - 1);
   const year = new Date(day); year.setFullYear(year.getFullYear() - 1);
+
+  let customFrom = null;
+  let customTo = null;
+  if (fromDateStr) {
+    const f = new Date(fromDateStr);
+    if (!Number.isNaN(f.getTime())) customFrom = startOfDay(f);
+  }
+  if (toDateStr) {
+    const t = new Date(toDateStr);
+    if (!Number.isNaN(t.getTime())) {
+      customTo = startOfDay(t);
+      customTo.setDate(customTo.getDate() + 1);
+    }
+  }
 
   const scopedMembers = members.filter((m) => {
     const statusPass = status === 'all' ? true : m.status === status;
@@ -328,11 +344,16 @@ function renderAdminDashboardV2(session, queryParams) {
   const monthly = countSinceScoped(month);
   const yearly = countSinceScoped(year);
 
+  const customCount = (customFrom && customTo)
+    ? scopedMembers.filter((m) => m.createdAt >= customFrom && m.createdAt < customTo).length
+    : 0;
+
   const selectedMap = {
     day: { label: 'ช่วงที่เลือก: รายวัน', value: daily },
     week: { label: 'ช่วงที่เลือก: รายสัปดาห์', value: weekly },
     month: { label: 'ช่วงที่เลือก: รายเดือน', value: monthly },
     year: { label: 'ช่วงที่เลือก: รายปี', value: yearly },
+    custom: { label: 'ช่วงที่เลือก: วันที่กำหนดเอง', value: customCount },
   };
   const selectedMetric = selectedMap[range] || selectedMap.month;
 
@@ -340,7 +361,23 @@ function renderAdminDashboardV2(session, queryParams) {
     const labels = [];
     const values = [];
 
-    if (range === 'day') {
+    if (range === 'custom' && customFrom && customTo && customFrom < customTo) {
+      const maxDays = 31;
+      const cursor = new Date(customFrom);
+      let guard = 0;
+      while (cursor < customTo && guard < maxDays) {
+        const s = new Date(cursor);
+        const e = new Date(s); e.setDate(s.getDate() + 1);
+        labels.push(s.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit' }));
+        values.push(scopedMembers.filter((m) => m.createdAt >= s && m.createdAt < e).length);
+        cursor.setDate(cursor.getDate() + 1);
+        guard += 1;
+      }
+      if (labels.length === 0) {
+        labels.push('ไม่มีข้อมูล');
+        values.push(0);
+      }
+    } else if (range === 'day') {
       const s = new Date(day);
       const e = new Date(s); e.setDate(s.getDate() + 1);
       labels.push('วันนี้');
@@ -417,6 +454,7 @@ function renderAdminDashboardV2(session, queryParams) {
             <option value="week" ${range === 'week' ? 'selected' : ''}>รายสัปดาห์</option>
             <option value="month" ${range === 'month' ? 'selected' : ''}>รายเดือน</option>
             <option value="year" ${range === 'year' ? 'selected' : ''}>รายปี</option>
+            <option value="custom" ${range === 'custom' ? 'selected' : ''}>กำหนดช่วงวันเอง</option>
           </select>
         </div>
         <div>
@@ -436,13 +474,21 @@ function renderAdminDashboardV2(session, queryParams) {
             <option value="other" ${gender === 'other' ? 'selected' : ''}>อื่นๆ</option>
           </select>
         </div>
+        <div>
+          <label class="muted">เริ่มวันที่ (Custom)</label>
+          <input type="date" name="from" value="${fromDateStr}" />
+        </div>
+        <div>
+          <label class="muted">ถึงวันที่ (Custom)</label>
+          <input type="date" name="to" value="${toDateStr}" />
+        </div>
         <button class="btn btn-primary" type="submit">Apply Filter</button>
       </form>
 
       <div class="grid" style="margin-bottom:14px">
         <div class="stat"><div class="k">สมาชิกทั้งหมด (ตาม filter)</div><div class="v">${total}</div></div>
         <div class="stat"><div class="k">${selectedMetric.label}</div><div class="v">${selectedMetric.value}</div></div>
-        <div class="stat"><div class="k">เงื่อนไขที่เลือก</div><div class="v" style="font-size:16px">${status}/${gender}</div></div>
+        <div class="stat"><div class="k">เงื่อนไขที่เลือก</div><div class="v" style="font-size:16px">${status}/${gender}${range === 'custom' && fromDateStr && toDateStr ? ` (${fromDateStr} ถึง ${toDateStr})` : ''}</div></div>
       </div>
 
       <section class="stat" style="margin-bottom:12px;">
