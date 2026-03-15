@@ -319,27 +319,6 @@ function renderUserLogin(error = '') {
 }
 
 function renderUserApp(session) {
-  const posts = [
-    { user: 'GN', text: 'คิดถึงมากไหมคะ 😂', time: 'เมื่อกี้', likes: 1 },
-    { user: 'นกฮูกปลดแอก', text: 'เขาอาจจะคิดว่าพี่ขำหมดทุกคนก็ได้', time: '2 นาที', likes: 3 },
-    { user: 'พี่ส่งนม', text: 'พี่ส่งนมหรือพี่ส่งฟังดีกว่าเยอะ', time: '5 นาที', likes: 1 },
-  ];
-
-  const feed = posts.map((p) => `
-    <article class="post">
-      <div class="post-head">
-        <div class="avatar-sm"></div>
-        <div>
-          <div class="u">${p.user}</div>
-          <div class="t">${p.time}</div>
-        </div>
-      </div>
-      <div class="msg">${p.text}</div>
-      <div class="post-actions">💬 ตอบกลับ • 👍 Like (${p.likes})</div>
-      <input class="reply" placeholder="เขียนตอบกลับ..." />
-    </article>
-  `).join('');
-
   return `<!doctype html>
 <html lang="th">
 <head>
@@ -359,20 +338,27 @@ function renderUserApp(session) {
     .center { padding:14px; }
     .board { background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }
     .toolbar { padding:10px; border-bottom:1px solid #e5e7eb; display:flex; gap:8px; align-items:center; }
-    .tool { border:1px solid #d1d5db; background:#fff; border-radius:8px; padding:8px 10px; font-size:14px; }
-    .composer { padding:10px; border-bottom:1px solid #e5e7eb; }
-    .composer input { width:100%; border:1px solid #d1d5db; border-radius:10px; padding:10px; }
+    .tool { border:1px solid #d1d5db; background:#fff; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; }
+    .composer { padding:10px; border-bottom:1px solid #e5e7eb; display:grid; gap:8px; }
+    .composer textarea { width:100%; border:1px solid #d1d5db; border-radius:10px; padding:10px; min-height:72px; font-family:inherit; }
+    .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .btn { border:1px solid #cbd5e1; background:#fff; border-radius:10px; padding:8px 12px; font-weight:700; cursor:pointer; }
+    .btn-primary { background:linear-gradient(135deg,#60a5fa,#f9a8d4); color:#fff; border:0; }
     .feed { padding:8px 10px 14px; display:grid; gap:10px; }
     .post { border:1px solid #e5e7eb; border-radius:10px; padding:10px; background:#fff; }
     .post-head { display:flex; gap:10px; align-items:center; margin-bottom:6px; }
     .avatar-sm { width:40px; height:40px; border-radius:999px; background:linear-gradient(135deg,#bfdbfe,#fbcfe8); }
     .u { font-weight:700; }
     .t { font-size:12px; color:#6b7280; }
-    .msg { margin:6px 0; font-size:16px; }
-    .post-actions { color:#6b7280; font-size:13px; margin-bottom:6px; }
+    .msg { margin:6px 0; font-size:16px; white-space:pre-wrap; }
+    .msg img { margin-top:8px; max-width:100%; border-radius:8px; border:1px solid #e5e7eb; }
+    .post-actions { color:#6b7280; font-size:13px; margin-bottom:6px; display:flex; gap:12px; }
     .reply { width:100%; border:1px solid #dbeafe; border-radius:8px; padding:8px; }
+    .replies { margin-top:8px; display:grid; gap:6px; }
+    .reply-item { background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:7px 8px; font-size:14px; }
     .right { background:#fff; border-left:1px solid #e5e7eb; padding:14px; }
     .profile-card { border:1px solid #e5e7eb; border-radius:10px; padding:12px; background:#f8fafc; }
+    .hidden { display:none; }
     @media (max-width: 980px) { .shell { grid-template-columns: 1fr; } .left,.right { border:0; } }
   </style>
 </head>
@@ -397,13 +383,21 @@ function renderUserApp(session) {
     <section class="center">
       <div class="board">
         <div class="toolbar">
-          <button class="tool">📷</button>
-          <button class="tool">😊</button>
-          <button class="tool">❤️</button>
+          <button class="tool" id="pickImageBtn">📷 รูป</button>
+          <button class="tool emoji-insert" data-emoji="😊">😊</button>
+          <button class="tool emoji-insert" data-emoji="❤️">❤️</button>
+          <button class="tool emoji-insert" data-emoji="😂">😂</button>
           <button class="tool">ออโต้ ▾</button>
+          <input id="imageInput" type="file" accept="image/*" class="hidden" />
         </div>
-        <div class="composer"><input placeholder="โพสต์อะไรดีวันนี้..." /></div>
-        <div class="feed">${feed}</div>
+        <div class="composer">
+          <textarea id="postText" placeholder="โพสต์อะไรดีวันนี้..."></textarea>
+          <div class="row">
+            <div id="imagePreviewBox" class="hidden"></div>
+            <button class="btn btn-primary" id="postBtn">โพสต์</button>
+          </div>
+        </div>
+        <div class="feed" id="feed"></div>
       </div>
     </section>
 
@@ -414,6 +408,134 @@ function renderUserApp(session) {
       </div>
     </aside>
   </main>
+
+  <script>
+    const STORAGE_KEY = 'sodeclick_v2_posts';
+    const username = ${JSON.stringify(session.displayName || session.username)};
+
+    const defaultPosts = [
+      { id: Date.now()-3, user:'GN', text:'คิดถึงมากไหมคะ 😂', image:null, likes:1, replies:[], at: new Date().toISOString() },
+      { id: Date.now()-2, user:'นกฮูกปลดแอก', text:'เขาอาจจะคิดว่าพี่ขำหมดทุกคนก็ได้', image:null, likes:3, replies:['จริงเลย 😂'], at: new Date().toISOString() },
+    ];
+
+    let posts = [];
+    let pendingImage = null;
+
+    function loadPosts() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        posts = Array.isArray(saved) && saved.length ? saved : defaultPosts;
+      } catch {
+        posts = defaultPosts;
+      }
+      savePosts();
+    }
+
+    function savePosts() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+    }
+
+    function renderFeed() {
+      const feed = document.getElementById('feed');
+      feed.innerHTML = posts.map((p, idx) => {
+        const replies = (p.replies || []).map(r => `<div class="reply-item">${r}</div>`).join('');
+        const img = p.image ? `<img src="${p.image}" alt="post-image" />` : '';
+        return `
+          <article class="post">
+            <div class="post-head">
+              <div class="avatar-sm"></div>
+              <div>
+                <div class="u">${p.user}</div>
+                <div class="t">${new Date(p.at).toLocaleString('th-TH')}</div>
+              </div>
+            </div>
+            <div class="msg">${p.text || ''}${img}</div>
+            <div class="post-actions">
+              <button class="btn" onclick="likePost(${idx})">👍 Like (${p.likes || 0})</button>
+            </div>
+            <input class="reply" id="reply-${idx}" placeholder="เขียนตอบกลับ..." />
+            <div class="row" style="margin-top:6px"><button class="btn" onclick="replyPost(${idx})">ตอบกลับ</button></div>
+            <div class="replies">${replies}</div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function likePost(i) {
+      posts[i].likes = (posts[i].likes || 0) + 1;
+      savePosts();
+      renderFeed();
+    }
+
+    function replyPost(i) {
+      const input = document.getElementById('reply-' + i);
+      const val = (input.value || '').trim();
+      if (!val) return;
+      posts[i].replies = posts[i].replies || [];
+      posts[i].replies.push(username + ': ' + val);
+      input.value = '';
+      savePosts();
+      renderFeed();
+    }
+
+    function resetPendingImage() {
+      pendingImage = null;
+      const box = document.getElementById('imagePreviewBox');
+      box.classList.add('hidden');
+      box.innerHTML = '';
+    }
+
+    document.getElementById('pickImageBtn').addEventListener('click', () => {
+      document.getElementById('imageInput').click();
+    });
+
+    document.getElementById('imageInput').addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        pendingImage = reader.result;
+        const box = document.getElementById('imagePreviewBox');
+        box.classList.remove('hidden');
+        box.innerHTML = `<img src="${pendingImage}" style="max-width:120px;border:1px solid #e5e7eb;border-radius:8px" /> <button class="btn" id="clearImgBtn">ลบรูป</button>`;
+        document.getElementById('clearImgBtn').addEventListener('click', resetPendingImage);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.querySelectorAll('.emoji-insert').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const ta = document.getElementById('postText');
+        ta.value += btn.dataset.emoji;
+        ta.focus();
+      });
+    });
+
+    document.getElementById('postBtn').addEventListener('click', () => {
+      const ta = document.getElementById('postText');
+      const text = (ta.value || '').trim();
+      if (!text && !pendingImage) return;
+      posts.unshift({
+        id: Date.now(),
+        user: username,
+        text,
+        image: pendingImage,
+        likes: 0,
+        replies: [],
+        at: new Date().toISOString(),
+      });
+      ta.value = '';
+      resetPendingImage();
+      savePosts();
+      renderFeed();
+    });
+
+    loadPosts();
+    renderFeed();
+
+    window.likePost = likePost;
+    window.replyPost = replyPost;
+  </script>
 </body>
 </html>`;
 }
