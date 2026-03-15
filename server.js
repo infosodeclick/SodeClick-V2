@@ -9,33 +9,121 @@ const html = `<!doctype html>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SodeClick V2</title>
   <style>
-    :root { color-scheme: dark; }
+    :root {
+      --blue: #60a5fa;
+      --blue-soft: #dbeafe;
+      --pink: #f9a8d4;
+      --pink-soft: #fce7f3;
+      --text: #1f2a44;
+      --white: #ffffff;
+    }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      color: var(--text);
+      background: linear-gradient(140deg, #ffffff 0%, #eff6ff 40%, #fdf2f8 100%);
       display: grid;
       place-items: center;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      background: #0b1020;
-      color: #e9eefc;
+      padding: 24px;
     }
     .card {
-      text-align: center;
-      padding: 28px;
-      border: 1px solid #26304f;
-      border-radius: 14px;
-      background: #121a31;
-      box-shadow: 0 12px 34px rgba(0,0,0,.35);
+      width: min(900px, 100%);
+      border-radius: 24px;
+      background: rgba(255,255,255,.92);
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 20px 50px rgba(96,165,250,.20);
+      overflow: hidden;
     }
-    h1 { margin: 0 0 8px; font-size: 28px; }
-    p { margin: 0; opacity: .85; }
+    .hero {
+      padding: 42px 34px 30px;
+      background: linear-gradient(135deg, var(--blue-soft), var(--pink-soft));
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .badge {
+      display: inline-block;
+      background: #fff;
+      border: 1px solid #bfdbfe;
+      color: #2563eb;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      margin-bottom: 14px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 4vw, 44px);
+      line-height: 1.1;
+      color: #1e3a8a;
+    }
+    .sub {
+      margin-top: 10px;
+      font-size: 16px;
+      color: #374151;
+    }
+    .content {
+      padding: 24px 34px 34px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .item {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 14px;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .btn {
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 11px 16px;
+      font-weight: 700;
+      font-size: 14px;
+      border: 1px solid transparent;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blue), var(--pink));
+      color: var(--white);
+      box-shadow: 0 10px 24px rgba(96,165,250,.28);
+    }
+    .btn-secondary {
+      background: #fff;
+      border-color: #cbd5e1;
+      color: #334155;
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>SodeClick V2</h1>
-    <p>ระบบเริ่มต้นพร้อมใช้งาน (หน้าเปล่า)</p>
-  </div>
+  <main class="card">
+    <section class="hero">
+      <span class="badge">SodeClick V2 • Preview</span>
+      <h1>เริ่มต้น SodeClick V2</h1>
+      <p class="sub">ธีมหลัก: ขาว • ฟ้า • ชมพูอ่อน พร้อมเริ่มพัฒนาฟีเจอร์จริง</p>
+    </section>
+    <section class="content">
+      <div class="grid">
+        <div class="item">✅ โครงระบบ V2 พร้อม</div>
+        <div class="item">✅ Health check ใช้งานได้</div>
+        <div class="item">🎨 ธีมใหม่ถูกนำมาใช้แล้ว</div>
+        <div class="item">🚀 พร้อมต่อยอดหน้า Login / Dashboard</div>
+      </div>
+      <div class="actions">
+        <a class="btn btn-primary" href="/health">ดูสถานะระบบ (/health)</a>
+        <a class="btn btn-secondary" href="https://github.com/infosodeclick/SodeClick-V2" target="_blank" rel="noreferrer">เปิด GitHub Repo</a>
+      </div>
+    </section>
+  </main>
 </body>
 </html>`;
 
