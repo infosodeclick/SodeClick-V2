@@ -273,12 +273,9 @@ function renderHome() {
     <main class="card">
       <div class="head">
         <h2 style="margin:0">SodeClick V2</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <a class="btn btn-primary" href="/login">Login หน้าบ้าน</a>
-          <a class="btn" href="/admin/login">Login หลังบ้าน</a>
-        </div>
+        <a class="btn btn-primary" href="/login">Login</a>
       </div>
-      <p>ระบบหน้าบ้าน + หลังบ้าน V2 พร้อมโครงสร้างเริ่มต้นแล้ว</p>
+      <p>ใช้ Login เดียว ระบบจะตรวจสิทธิ์อัตโนมัติ (ผู้มีสิทธิ์เข้าหลังบ้านได้ทันที)</p>
       <div class="grid" style="margin-top:12px">
         <div class="stat"><div class="k">โครงระบบ</div><div class="v">พร้อม</div></div>
         <div class="stat"><div class="k">Health</div><div class="v">OK</div></div>
@@ -316,8 +313,7 @@ function renderUserLogin(error = '') {
         <input name="password" type="password" required />
         <button class="btn btn-primary" style="width:100%;margin-top:12px" type="submit">เข้าสู่ระบบ</button>
       </form>
-      <p class="muted">บัญชีตัวอย่างสำหรับเดโม: user / 123456</p>
-      <a class="btn" style="margin-top:10px" href="/admin/login">ไปหน้าหลังบ้าน</a>
+      <p class="muted">บัญชีตัวอย่างเดโม: user / 123456 และ admin / 123456</p>
     </div>
   `);
 }
@@ -869,12 +865,23 @@ const server = http.createServer(async (req, res) => {
 
   if (path === '/login' && req.method === 'POST') {
     const body = await parseBody(req);
+
+    const foundAdmin = adminAccounts.find((u) => u.username === body.username && u.password === body.password);
+    if (foundAdmin) {
+      const sid = crypto.randomBytes(24).toString('hex');
+      sessions.set(sid, { username: foundAdmin.username, role: foundAdmin.role, displayName: foundAdmin.displayName, createdAt: Date.now() });
+      addAudit('login', foundAdmin.username, `role=${foundAdmin.role}`);
+      redirect(res, '/admin/dashboard', `sid=${sid}; HttpOnly; Path=/; SameSite=Lax; Max-Age=28800`);
+      return;
+    }
+
     if (body.username === 'user' && body.password === '123456') {
       const sid = crypto.randomBytes(24).toString('hex');
       userSessions.set(sid, { username: body.username, displayName: 'พล' });
       redirect(res, '/app', `user_sid=${sid}; HttpOnly; Path=/; SameSite=Lax; Max-Age=28800`);
       return;
     }
+
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(renderUserLogin('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'));
     return;
@@ -896,25 +903,12 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (path === '/admin/login' && req.method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(renderAdminLogin());
+    redirect(res, '/login');
     return;
   }
 
   if (path === '/admin/login' && req.method === 'POST') {
-    const body = await parseBody(req);
-    const found = adminAccounts.find((u) => u.username === body.username && u.password === body.password);
-
-    if (found) {
-      const sid = crypto.randomBytes(24).toString('hex');
-      sessions.set(sid, { username: found.username, role: found.role, displayName: found.displayName, createdAt: Date.now() });
-      addAudit('login', found.username, `role=${found.role}`);
-      redirect(res, '/admin/dashboard', `sid=${sid}; HttpOnly; Path=/; SameSite=Lax; Max-Age=28800`);
-      return;
-    }
-
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(renderAdminLogin('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'));
+    redirect(res, '/login');
     return;
   }
 
@@ -923,7 +917,7 @@ const server = http.createServer(async (req, res) => {
     const sid = parseCookies(req).sid;
     if (session) addAudit('logout', session.username, `role=${session.role}`);
     if (sid) sessions.delete(sid);
-    redirect(res, '/admin/login', 'sid=; HttpOnly; Path=/; Max-Age=0');
+    redirect(res, '/login', 'sid=; HttpOnly; Path=/; Max-Age=0');
     return;
   }
 
