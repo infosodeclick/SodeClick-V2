@@ -302,6 +302,159 @@ function renderAdminDashboard(session) {
   `);
 }
 
+function renderAdminDashboardV2(session, queryParams) {
+  const range = (queryParams.get('range') || 'month').trim(); // day|week|month|year
+  const status = (queryParams.get('status') || 'all').trim(); // all|active|blocked
+
+  const now = new Date();
+  const day = startOfDay(now);
+  const week = new Date(day); week.setDate(week.getDate() - 7);
+  const month = new Date(day); month.setMonth(month.getMonth() - 1);
+  const year = new Date(day); year.setFullYear(year.getFullYear() - 1);
+
+  const scopedMembers = members.filter((m) => (status === 'all' ? true : m.status === status));
+  const countSinceScoped = (date) => scopedMembers.filter((m) => m.createdAt >= date).length;
+
+  const total = scopedMembers.length;
+  const daily = countSinceScoped(day);
+  const weekly = countSinceScoped(week);
+  const monthly = countSinceScoped(month);
+  const yearly = countSinceScoped(year);
+
+  const buildSeries = () => {
+    const labels = [];
+    const values = [];
+
+    if (range === 'day') {
+      for (let i = 6; i >= 0; i--) {
+        const s = new Date(day); s.setDate(day.getDate() - i);
+        const e = new Date(s); e.setDate(s.getDate() + 1);
+        labels.push(s.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit' }));
+        values.push(scopedMembers.filter((m) => m.createdAt >= s && m.createdAt < e).length);
+      }
+    } else if (range === 'week') {
+      for (let i = 7; i >= 0; i--) {
+        const s = new Date(day); s.setDate(day.getDate() - (i * 7));
+        const e = new Date(s); e.setDate(s.getDate() + 7);
+        labels.push(`W-${8 - i}`);
+        values.push(scopedMembers.filter((m) => m.createdAt >= s && m.createdAt < e).length);
+      }
+    } else if (range === 'year') {
+      for (let i = 11; i >= 0; i--) {
+        const s = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const e = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+        labels.push(s.toLocaleDateString('th-TH', { month: 'short' }));
+        values.push(scopedMembers.filter((m) => m.createdAt >= s && m.createdAt < e).length);
+      }
+    } else {
+      // month = last 30 days split by 5-day buckets
+      for (let i = 5; i >= 0; i--) {
+        const s = new Date(day); s.setDate(day.getDate() - (i * 5));
+        const e = new Date(s); e.setDate(s.getDate() + 5);
+        labels.push(`${s.getDate()}/${s.getMonth() + 1}`);
+        values.push(scopedMembers.filter((m) => m.createdAt >= s && m.createdAt < e).length);
+      }
+    }
+
+    return { labels, values };
+  };
+
+  const { labels, values } = buildSeries();
+  const maxVal = Math.max(...values, 1);
+  const bars = labels.map((label, i) => {
+    const h = Math.max(12, Math.round((values[i] / maxVal) * 140));
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:44px">
+      <div title="${values[i]}" style="width:28px;height:${h}px;border-radius:8px 8px 4px 4px;background:linear-gradient(180deg,#60a5fa,#f9a8d4);"></div>
+      <div style="font-size:11px;color:#64748b">${label}</div>
+      <div style="font-size:12px;font-weight:700;color:#1e3a8a">${values[i]}</div>
+    </div>`;
+  }).join('');
+
+  const latestMembers = [...scopedMembers]
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, 5)
+    .map((m) => `<tr><td>${m.id}</td><td>${m.name}</td><td>${m.status === 'blocked' ? 'บล็อก' : 'ปกติ'}</td><td>${m.createdAt.toLocaleDateString('th-TH')}</td></tr>`)
+    .join('');
+
+  const recentLogs = auditLogs
+    .slice(0, 6)
+    .map((log) => `<tr><td>${log.at.toLocaleString('th-TH')}</td><td>${log.actor}</td><td>${log.action}</td><td>${log.details || '-'}</td></tr>`)
+    .join('');
+
+  return htmlPage('Dashboard - Admin', `
+    <main class="card">
+      <div class="head">
+        <div class="topline">
+          <h2 style="margin:0">แดชบอร์ดหลังบ้าน</h2>
+          <span class="pill">ผู้ใช้: ${session.username}</span>
+          <span class="pill">สิทธิ์: ${session.role}</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn" href="/admin/members">จัดการสมาชิก</a>
+          <a class="btn" href="/admin/audit">Audit Log</a>
+          <a class="btn" href="/admin/logout">ออกจากระบบ</a>
+        </div>
+      </div>
+
+      <form method="GET" action="/admin/dashboard" class="filters" style="margin-bottom:12px">
+        <div>
+          <label class="muted">ช่วงเวลาแสดงกราฟ</label>
+          <select name="range">
+            <option value="day" ${range === 'day' ? 'selected' : ''}>รายวัน (7 วัน)</option>
+            <option value="week" ${range === 'week' ? 'selected' : ''}>รายสัปดาห์</option>
+            <option value="month" ${range === 'month' ? 'selected' : ''}>รายเดือน</option>
+            <option value="year" ${range === 'year' ? 'selected' : ''}>รายปี</option>
+          </select>
+        </div>
+        <div>
+          <label class="muted">กรองสถานะสมาชิก</label>
+          <select name="status">
+            <option value="all" ${status === 'all' ? 'selected' : ''}>ทั้งหมด</option>
+            <option value="active" ${status === 'active' ? 'selected' : ''}>ปกติ</option>
+            <option value="blocked" ${status === 'blocked' ? 'selected' : ''}>บล็อก</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" type="submit">Apply Filter</button>
+      </form>
+
+      <div class="grid" style="margin-bottom:14px">
+        <div class="stat"><div class="k">สมาชิกทั้งหมด (ตาม filter)</div><div class="v">${total}</div></div>
+        <div class="stat"><div class="k">รายวัน</div><div class="v">${daily}</div></div>
+        <div class="stat"><div class="k">รายสัปดาห์</div><div class="v">${weekly}</div></div>
+        <div class="stat"><div class="k">รายเดือน</div><div class="v">${monthly}</div></div>
+        <div class="stat"><div class="k">รายปี</div><div class="v">${yearly}</div></div>
+      </div>
+
+      <section class="stat" style="margin-bottom:12px;">
+        <div class="k" style="margin-bottom:8px">กราฟจำนวนสมาชิกตามช่วงเวลา</div>
+        <div style="display:flex;align-items:flex-end;gap:10px;overflow:auto;padding:8px 2px 2px;min-height:190px;">${bars}</div>
+      </section>
+
+      <div class="grid" style="grid-template-columns: 1.2fr 1fr; gap:12px; align-items:start;">
+        <section class="stat" style="padding:0;overflow:hidden;">
+          <div style="padding:12px 12px 0"><strong>สมาชิกล่าสุด (ตาม filter)</strong></div>
+          <div style="overflow:auto; padding:8px 12px 12px;">
+            <table>
+              <thead><tr><th>ID</th><th>ชื่อ</th><th>สถานะ</th><th>วันที่สมัคร</th></tr></thead>
+              <tbody>${latestMembers || '<tr><td colspan="4">ยังไม่มีข้อมูล</td></tr>'}</tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="stat" style="padding:0;overflow:hidden;">
+          <div style="padding:12px 12px 0"><strong>กิจกรรมล่าสุด (Audit)</strong></div>
+          <div style="overflow:auto; padding:8px 12px 12px;">
+            <table>
+              <thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>เหตุการณ์</th><th>รายละเอียด</th></tr></thead>
+              <tbody>${recentLogs || '<tr><td colspan="4">ยังไม่มีประวัติ</td></tr>'}</tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  `);
+}
+
 function renderMembersPage(session, queryParams) {
   const q = (queryParams.get('q') || '').trim().toLowerCase();
   const status = (queryParams.get('status') || 'all').trim();
@@ -485,7 +638,7 @@ const server = http.createServer(async (req, res) => {
     if (!requirePermission(session, 'view_dashboard', res)) return;
 
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(renderAdminDashboard(session));
+    res.end(renderAdminDashboardV2(session, url.searchParams));
     return;
   }
 
