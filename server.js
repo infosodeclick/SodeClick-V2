@@ -14,11 +14,13 @@ const adminAccounts = [
 const sessions = new Map();
 
 let members = [
-  { id: 'U001', name: 'Nina', email: 'nina@example.com', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3) },
-  { id: 'U002', name: 'Mild', email: 'mild@example.com', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2) },
-  { id: 'U003', name: 'Beam', email: 'beam@example.com', status: 'blocked', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7) },
-  { id: 'U004', name: 'Fah', email: 'fah@example.com', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 40) },
-  { id: 'U005', name: 'Pear', email: 'pear@example.com', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 200) },
+  { id: 'U001', name: 'Nina', email: 'nina@example.com', gender: 'female', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3) },
+  { id: 'U002', name: 'Mild', email: 'mild@example.com', gender: 'female', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2) },
+  { id: 'U003', name: 'Beam', email: 'beam@example.com', gender: 'male', status: 'blocked', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7) },
+  { id: 'U004', name: 'Fah', email: 'fah@example.com', gender: 'female', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 40) },
+  { id: 'U005', name: 'Pear', email: 'pear@example.com', gender: 'female', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 200) },
+  { id: 'U006', name: 'Ton', email: 'ton@example.com', gender: 'male', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 15) },
+  { id: 'U007', name: 'Mint', email: 'mint@example.com', gender: 'other', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1) },
 ];
 
 let auditLogs = [];
@@ -170,7 +172,7 @@ function htmlPage(title, body) {
     .muted { color:#64748b; font-size:13px; }
     .filters {
       display:grid;
-      grid-template-columns: 1.2fr 180px auto;
+      grid-template-columns: 1fr 180px 180px auto;
       gap:8px;
       align-items:end;
     }
@@ -305,6 +307,7 @@ function renderAdminDashboard(session) {
 function renderAdminDashboardV2(session, queryParams) {
   const range = (queryParams.get('range') || 'month').trim(); // day|week|month|year
   const status = (queryParams.get('status') || 'all').trim(); // all|active|blocked
+  const gender = (queryParams.get('gender') || 'all').trim(); // all|male|female|other
 
   const now = new Date();
   const day = startOfDay(now);
@@ -312,7 +315,11 @@ function renderAdminDashboardV2(session, queryParams) {
   const month = new Date(day); month.setMonth(month.getMonth() - 1);
   const year = new Date(day); year.setFullYear(year.getFullYear() - 1);
 
-  const scopedMembers = members.filter((m) => (status === 'all' ? true : m.status === status));
+  const scopedMembers = members.filter((m) => {
+    const statusPass = status === 'all' ? true : m.status === status;
+    const genderPass = gender === 'all' ? true : m.gender === gender;
+    return statusPass && genderPass;
+  });
   const countSinceScoped = (date) => scopedMembers.filter((m) => m.createdAt >= date).length;
 
   const total = scopedMembers.length;
@@ -320,6 +327,14 @@ function renderAdminDashboardV2(session, queryParams) {
   const weekly = countSinceScoped(week);
   const monthly = countSinceScoped(month);
   const yearly = countSinceScoped(year);
+
+  const selectedMap = {
+    day: { label: 'ช่วงที่เลือก: รายวัน', value: daily },
+    week: { label: 'ช่วงที่เลือก: รายสัปดาห์', value: weekly },
+    month: { label: 'ช่วงที่เลือก: รายเดือน', value: monthly },
+    year: { label: 'ช่วงที่เลือก: รายปี', value: yearly },
+  };
+  const selectedMetric = selectedMap[range] || selectedMap.month;
 
   const buildSeries = () => {
     const labels = [];
@@ -373,7 +388,7 @@ function renderAdminDashboardV2(session, queryParams) {
   const latestMembers = [...scopedMembers]
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, 5)
-    .map((m) => `<tr><td>${m.id}</td><td>${m.name}</td><td>${m.status === 'blocked' ? 'บล็อก' : 'ปกติ'}</td><td>${m.createdAt.toLocaleDateString('th-TH')}</td></tr>`)
+    .map((m) => `<tr><td>${m.id}</td><td>${m.name}</td><td>${m.gender || '-'}</td><td>${m.status === 'blocked' ? 'บล็อก' : 'ปกติ'}</td><td>${m.createdAt.toLocaleDateString('th-TH')}</td></tr>`)
     .join('');
 
   const recentLogs = auditLogs
@@ -414,15 +429,22 @@ function renderAdminDashboardV2(session, queryParams) {
             <option value="blocked" ${status === 'blocked' ? 'selected' : ''}>บล็อก</option>
           </select>
         </div>
+        <div>
+          <label class="muted">กรองเพศ</label>
+          <select name="gender">
+            <option value="all" ${gender === 'all' ? 'selected' : ''}>ทั้งหมด</option>
+            <option value="male" ${gender === 'male' ? 'selected' : ''}>ชาย</option>
+            <option value="female" ${gender === 'female' ? 'selected' : ''}>หญิง</option>
+            <option value="other" ${gender === 'other' ? 'selected' : ''}>อื่นๆ</option>
+          </select>
+        </div>
         <button class="btn btn-primary" type="submit">Apply Filter</button>
       </form>
 
       <div class="grid" style="margin-bottom:14px">
         <div class="stat"><div class="k">สมาชิกทั้งหมด (ตาม filter)</div><div class="v">${total}</div></div>
-        <div class="stat"><div class="k">รายวัน</div><div class="v">${daily}</div></div>
-        <div class="stat"><div class="k">รายสัปดาห์</div><div class="v">${weekly}</div></div>
-        <div class="stat"><div class="k">รายเดือน</div><div class="v">${monthly}</div></div>
-        <div class="stat"><div class="k">รายปี</div><div class="v">${yearly}</div></div>
+        <div class="stat"><div class="k">${selectedMetric.label}</div><div class="v">${selectedMetric.value}</div></div>
+        <div class="stat"><div class="k">เงื่อนไขที่เลือก</div><div class="v" style="font-size:16px">${status}/${gender}</div></div>
       </div>
 
       <section class="stat" style="margin-bottom:12px;">
@@ -435,8 +457,8 @@ function renderAdminDashboardV2(session, queryParams) {
           <div style="padding:12px 12px 0"><strong>สมาชิกล่าสุด (ตาม filter)</strong></div>
           <div style="overflow:auto; padding:8px 12px 12px;">
             <table>
-              <thead><tr><th>ID</th><th>ชื่อ</th><th>สถานะ</th><th>วันที่สมัคร</th></tr></thead>
-              <tbody>${latestMembers || '<tr><td colspan="4">ยังไม่มีข้อมูล</td></tr>'}</tbody>
+              <thead><tr><th>ID</th><th>ชื่อ</th><th>เพศ</th><th>สถานะ</th><th>วันที่สมัคร</th></tr></thead>
+              <tbody>${latestMembers || '<tr><td colspan="5">ยังไม่มีข้อมูล</td></tr>'}</tbody>
             </table>
           </div>
         </section>
