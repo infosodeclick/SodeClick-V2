@@ -12,6 +12,7 @@ const adminAccounts = [
 ];
 
 const sessions = new Map();
+const userSessions = new Map();
 
 let members = [
   { id: 'U001', name: 'Nina', email: 'nina@example.com', gender: 'female', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3) },
@@ -75,6 +76,21 @@ function requireAuth(req, res) {
   const session = getSession(req);
   if (!session) {
     redirect(res, '/admin/login');
+    return null;
+  }
+  return session;
+}
+
+function getUserSession(req) {
+  const sid = parseCookies(req).user_sid;
+  if (!sid) return null;
+  return userSessions.get(sid) || null;
+}
+
+function requireUserAuth(req, res) {
+  const session = getUserSession(req);
+  if (!session) {
+    redirect(res, '/login');
     return null;
   }
   return session;
@@ -257,9 +273,12 @@ function renderHome() {
     <main class="card">
       <div class="head">
         <h2 style="margin:0">SodeClick V2</h2>
-        <a class="btn btn-primary" href="/admin/login">Login</a>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn btn-primary" href="/login">Login หน้าบ้าน</a>
+          <a class="btn" href="/admin/login">Login หลังบ้าน</a>
+        </div>
       </div>
-      <p>ระบบหลังบ้าน V2 พร้อมใช้งานเบื้องต้นแล้ว</p>
+      <p>ระบบหน้าบ้าน + หลังบ้าน V2 พร้อมโครงสร้างเริ่มต้นแล้ว</p>
       <div class="grid" style="margin-top:12px">
         <div class="stat"><div class="k">โครงระบบ</div><div class="v">พร้อม</div></div>
         <div class="stat"><div class="k">Health</div><div class="v">OK</div></div>
@@ -283,6 +302,98 @@ function renderAdminLogin(error = '') {
       <p class="muted">บัญชีทดสอบ: admin/123456, manager/123456, staff/123456</p>
     </div>
   `);
+}
+
+function renderUserLogin(error = '') {
+  return htmlPage('Login - SodeClick V2', `
+    <div class="login">
+      <h2 style="margin-top:0">เข้าสู่ระบบผู้ใช้งาน</h2>
+      ${error ? `<p style="color:#dc2626;font-weight:700">${error}</p>` : ''}
+      <form method="POST" action="/login">
+        <label>Username</label>
+        <input name="username" required />
+        <label style="margin-top:8px;display:block">Password</label>
+        <input name="password" type="password" required />
+        <button class="btn btn-primary" style="width:100%;margin-top:12px" type="submit">เข้าสู่ระบบ</button>
+      </form>
+      <p class="muted">บัญชีตัวอย่างสำหรับเดโม: user / 123456</p>
+      <a class="btn" style="margin-top:10px" href="/admin/login">ไปหน้าหลังบ้าน</a>
+    </div>
+  `);
+}
+
+function renderUserApp(session) {
+  return `<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>หน้าบ้าน - SodeClick V2</title>
+  <style>
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:#f3f4f6; color:#111827; }
+    .topbar { height:56px; background:#3b82f6; color:#fff; display:flex; align-items:center; padding:0 14px; gap:16px; }
+    .brand { font-weight:800; }
+    .top-menu { display:flex; gap:18px; font-weight:600; font-size:14px; opacity:.95; }
+    .shell { display:grid; grid-template-columns: 250px 1fr 280px; min-height: calc(100vh - 56px); }
+    .left { background:#fff; border-right:1px solid #e5e7eb; padding:14px; }
+    .left a { display:block; padding:10px 8px; border-radius:8px; text-decoration:none; color:#374151; font-weight:600; }
+    .left a:hover { background:#f3f4f6; }
+    .center { padding:18px; }
+    .profile-card { background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:20px; min-height:500px; }
+    .avatar { width:140px; height:140px; border-radius:999px; margin: 8px auto; background: linear-gradient(135deg,#bfdbfe,#fbcfe8); }
+    .name { text-align:center; font-size:24px; font-weight:800; margin-top:8px; }
+    .meta { text-align:center; color:#6b7280; }
+    .stats { display:grid; grid-template-columns: repeat(4, minmax(80px,1fr)); gap:10px; margin-top:18px; }
+    .stat { text-align:center; background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:10px; }
+    .right { background:#fff; border-left:1px solid #e5e7eb; padding:14px; }
+    .right h4 { margin:0 0 10px; }
+    .empty { color:#9ca3af; font-size:14px; text-align:center; margin-top:40px; }
+    @media (max-width: 980px) { .shell { grid-template-columns: 1fr; } .left,.right { border:0; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">SodeClick</div>
+    <nav class="top-menu">
+      <span>กระดาน</span><span>ออนไลน์</span><span>ดีเจ</span><span>ซุปตาร์</span><span>เกมส์</span>
+    </nav>
+    <div style="margin-left:auto"><a href="/logout" style="color:#fff;text-decoration:none;font-weight:700">ออกจากระบบ</a></div>
+  </header>
+
+  <main class="shell">
+    <aside class="left">
+      <a href="#">กลับไปหน้าหลัก</a>
+      <a href="#">แชทกลุ่ม</a>
+      <a href="#">เติมเหรียญ</a>
+      <a href="#">รางวัล</a>
+      <a href="#">โหมดกลางคืน</a>
+      <a href="#">ภาษา</a>
+      <a href="#">ติดต่อ</a>
+    </aside>
+
+    <section class="center">
+      <div class="profile-card">
+        <div class="name">${session.displayName || session.username}</div>
+        <div class="meta">ออนไลน์ • 2 เสียง</div>
+        <div class="avatar"></div>
+        <div class="stats">
+          <div class="stat"><div>ของขวัญ</div><strong>0</strong></div>
+          <div class="stat"><div>เหรียญ</div><strong>0</strong></div>
+          <div class="stat"><div>หนังสือ</div><strong>0</strong></div>
+          <div class="stat"><div>สถานะ</div><strong>ปกติ</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="right">
+      <h4>เมนูด่วน</h4>
+      <div style="display:flex; gap:8px; font-size:14px; color:#374151"><span>คุยเล่น</span><span>ค้นหา</span><span>คนโปรด</span></div>
+      <div class="empty">ไม่มีข้อความใหม่</div>
+    </aside>
+  </main>
+</body>
+</html>`;
 }
 
 function renderAdminDashboard(session) {
@@ -750,8 +861,37 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (path === '/login') {
-    redirect(res, '/admin/login');
+  if (path === '/login' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderUserLogin());
+    return;
+  }
+
+  if (path === '/login' && req.method === 'POST') {
+    const body = await parseBody(req);
+    if (body.username === 'user' && body.password === '123456') {
+      const sid = crypto.randomBytes(24).toString('hex');
+      userSessions.set(sid, { username: body.username, displayName: 'พล' });
+      redirect(res, '/app', `user_sid=${sid}; HttpOnly; Path=/; SameSite=Lax; Max-Age=28800`);
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderUserLogin('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'));
+    return;
+  }
+
+  if (path === '/app') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderUserApp(userSession));
+    return;
+  }
+
+  if (path === '/logout') {
+    const sid = parseCookies(req).user_sid;
+    if (sid) userSessions.delete(sid);
+    redirect(res, '/login', 'user_sid=; HttpOnly; Path=/; Max-Age=0');
     return;
   }
 
