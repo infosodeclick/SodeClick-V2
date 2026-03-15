@@ -131,6 +131,39 @@ function htmlPage(title, body) {
       padding: clamp(12px, 2.5vw, 24px);
     }
     .wrap { max-width: 1160px; margin: 0 auto; }
+    .admin-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+    .sidebar {
+      position: sticky;
+      top: 12px;
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius: 16px;
+      box-shadow: 0 12px 28px rgba(96,165,250,.08);
+      padding: 10px;
+    }
+    .side-title { font-size: 12px; color:#64748b; margin: 4px 8px 8px; }
+    .side-link {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      border-radius:10px;
+      padding:10px 10px;
+      text-decoration:none;
+      color:#334155;
+      font-weight:700;
+      margin-bottom:4px;
+    }
+    .side-link:hover { background:#f8fafc; }
+    .side-link.active {
+      background: linear-gradient(135deg,var(--blue-soft),var(--pink-soft));
+      color:#1e3a8a;
+      border:1px solid #bfdbfe;
+    }
     .card {
       background: #fff;
       border: 1px solid #e5e7eb;
@@ -178,6 +211,8 @@ function htmlPage(title, body) {
     }
     .log-row { display:grid; grid-template-columns: 180px 160px 1fr; gap:8px; padding:10px; border-bottom:1px solid #e5e7eb; font-size:14px; }
     @media (max-width: 760px) {
+      .admin-layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
       .filters { grid-template-columns: 1fr; }
       .log-row { grid-template-columns: 1fr; }
     }
@@ -187,6 +222,24 @@ function htmlPage(title, body) {
   <div class="wrap">${body}</div>
 </body>
 </html>`;
+}
+
+function adminShell(session, activeKey, content) {
+  const item = (key, href, label) => `<a class="side-link ${activeKey === key ? 'active' : ''}" href="${href}">${label}</a>`;
+  return `
+    <div class="admin-layout">
+      <aside class="sidebar">
+        <div class="side-title">เมนูหลังบ้าน</div>
+        ${item('dashboard', '/admin/dashboard', 'ภาพรวม')}
+        ${item('members', '/admin/members', 'สมาชิก')}
+        ${item('revenue', '/admin/revenue', 'รายได้')}
+        ${item('promotions', '/admin/promotions', 'โปรโมชั่น')}
+        ${item('activities', '/admin/activities', 'กิจกรรม')}
+        <a class="side-link" href="/admin/logout">ออกจากระบบ</a>
+      </aside>
+      <section>${content}</section>
+    </div>
+  `;
 }
 
 function startOfDay(d = new Date()) {
