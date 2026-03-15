@@ -319,6 +319,27 @@ function renderUserLogin(error = '') {
 }
 
 function renderUserApp(session) {
+  const posts = [
+    { user: 'GN', text: 'คิดถึงมากไหมคะ 😂', time: 'เมื่อกี้', likes: 1 },
+    { user: 'นกฮูกปลดแอก', text: 'เขาอาจจะคิดว่าพี่ขำหมดทุกคนก็ได้', time: '2 นาที', likes: 3 },
+    { user: 'พี่ส่งนม', text: 'พี่ส่งนมหรือพี่ส่งฟังดีกว่าเยอะ', time: '5 นาที', likes: 1 },
+  ];
+
+  const feed = posts.map((p) => `
+    <article class="post">
+      <div class="post-head">
+        <div class="avatar-sm"></div>
+        <div>
+          <div class="u">${p.user}</div>
+          <div class="t">${p.time}</div>
+        </div>
+      </div>
+      <div class="msg">${p.text}</div>
+      <div class="post-actions">💬 ตอบกลับ • 👍 Like (${p.likes})</div>
+      <input class="reply" placeholder="เขียนตอบกลับ..." />
+    </article>
+  `).join('');
+
   return `<!doctype html>
 <html lang="th">
 <head>
@@ -331,20 +352,27 @@ function renderUserApp(session) {
     .topbar { height:56px; background:#3b82f6; color:#fff; display:flex; align-items:center; padding:0 14px; gap:16px; }
     .brand { font-weight:800; }
     .top-menu { display:flex; gap:18px; font-weight:600; font-size:14px; opacity:.95; }
-    .shell { display:grid; grid-template-columns: 250px 1fr 280px; min-height: calc(100vh - 56px); }
+    .shell { display:grid; grid-template-columns: 220px 1fr 250px; min-height: calc(100vh - 56px); }
     .left { background:#fff; border-right:1px solid #e5e7eb; padding:14px; }
     .left a { display:block; padding:10px 8px; border-radius:8px; text-decoration:none; color:#374151; font-weight:600; }
     .left a:hover { background:#f3f4f6; }
-    .center { padding:18px; }
-    .profile-card { background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:20px; min-height:500px; }
-    .avatar { width:140px; height:140px; border-radius:999px; margin: 8px auto; background: linear-gradient(135deg,#bfdbfe,#fbcfe8); }
-    .name { text-align:center; font-size:24px; font-weight:800; margin-top:8px; }
-    .meta { text-align:center; color:#6b7280; }
-    .stats { display:grid; grid-template-columns: repeat(4, minmax(80px,1fr)); gap:10px; margin-top:18px; }
-    .stat { text-align:center; background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:10px; }
+    .center { padding:14px; }
+    .board { background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }
+    .toolbar { padding:10px; border-bottom:1px solid #e5e7eb; display:flex; gap:8px; align-items:center; }
+    .tool { border:1px solid #d1d5db; background:#fff; border-radius:8px; padding:8px 10px; font-size:14px; }
+    .composer { padding:10px; border-bottom:1px solid #e5e7eb; }
+    .composer input { width:100%; border:1px solid #d1d5db; border-radius:10px; padding:10px; }
+    .feed { padding:8px 10px 14px; display:grid; gap:10px; }
+    .post { border:1px solid #e5e7eb; border-radius:10px; padding:10px; background:#fff; }
+    .post-head { display:flex; gap:10px; align-items:center; margin-bottom:6px; }
+    .avatar-sm { width:40px; height:40px; border-radius:999px; background:linear-gradient(135deg,#bfdbfe,#fbcfe8); }
+    .u { font-weight:700; }
+    .t { font-size:12px; color:#6b7280; }
+    .msg { margin:6px 0; font-size:16px; }
+    .post-actions { color:#6b7280; font-size:13px; margin-bottom:6px; }
+    .reply { width:100%; border:1px solid #dbeafe; border-radius:8px; padding:8px; }
     .right { background:#fff; border-left:1px solid #e5e7eb; padding:14px; }
-    .right h4 { margin:0 0 10px; }
-    .empty { color:#9ca3af; font-size:14px; text-align:center; margin-top:40px; }
+    .profile-card { border:1px solid #e5e7eb; border-radius:10px; padding:12px; background:#f8fafc; }
     @media (max-width: 980px) { .shell { grid-template-columns: 1fr; } .left,.right { border:0; } }
   </style>
 </head>
@@ -359,33 +387,31 @@ function renderUserApp(session) {
 
   <main class="shell">
     <aside class="left">
-      <a href="#">กลับไปหน้าหลัก</a>
-      <a href="#">แชทกลุ่ม</a>
-      <a href="#">เติมเหรียญ</a>
-      <a href="#">รางวัล</a>
-      <a href="#">โหมดกลางคืน</a>
-      <a href="#">ภาษา</a>
-      <a href="#">ติดต่อ</a>
+      <a href="#">หน้าหลัก</a>
+      <a href="#">กระดานโต้ตอบ</a>
+      <a href="#">ห้องแชท</a>
+      <a href="#">เพื่อนออนไลน์</a>
+      <a href="#">โปรไฟล์ฉัน</a>
     </aside>
 
     <section class="center">
-      <div class="profile-card">
-        <div class="name">${session.displayName || session.username}</div>
-        <div class="meta">ออนไลน์ • 2 เสียง</div>
-        <div class="avatar"></div>
-        <div class="stats">
-          <div class="stat"><div>ของขวัญ</div><strong>0</strong></div>
-          <div class="stat"><div>เหรียญ</div><strong>0</strong></div>
-          <div class="stat"><div>หนังสือ</div><strong>0</strong></div>
-          <div class="stat"><div>สถานะ</div><strong>ปกติ</strong></div>
+      <div class="board">
+        <div class="toolbar">
+          <button class="tool">📷</button>
+          <button class="tool">😊</button>
+          <button class="tool">❤️</button>
+          <button class="tool">ออโต้ ▾</button>
         </div>
+        <div class="composer"><input placeholder="โพสต์อะไรดีวันนี้..." /></div>
+        <div class="feed">${feed}</div>
       </div>
     </section>
 
     <aside class="right">
-      <h4>เมนูด่วน</h4>
-      <div style="display:flex; gap:8px; font-size:14px; color:#374151"><span>คุยเล่น</span><span>ค้นหา</span><span>คนโปรด</span></div>
-      <div class="empty">ไม่มีข้อความใหม่</div>
+      <div class="profile-card">
+        <div style="font-weight:800">${session.displayName || session.username}</div>
+        <div style="color:#6b7280;font-size:13px">สถานะ: ออนไลน์</div>
+      </div>
     </aside>
   </main>
 </body>
