@@ -243,6 +243,17 @@ function renderAdminDashboard(session) {
   const monthly = countSince(month);
   const yearly = countSince(year);
 
+  const latestMembers = [...members]
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, 5)
+    .map((m) => `<tr><td>${m.id}</td><td>${m.name}</td><td>${m.status === 'blocked' ? 'บล็อก' : 'ปกติ'}</td><td>${m.createdAt.toLocaleDateString('th-TH')}</td></tr>`)
+    .join('');
+
+  const recentLogs = auditLogs
+    .slice(0, 6)
+    .map((log) => `<tr><td>${log.at.toLocaleString('th-TH')}</td><td>${log.actor}</td><td>${log.action}</td><td>${log.details || '-'}</td></tr>`)
+    .join('');
+
   return htmlPage('Dashboard - Admin', `
     <main class="card">
       <div class="head">
@@ -258,12 +269,34 @@ function renderAdminDashboard(session) {
         </div>
       </div>
 
-      <div class="grid">
+      <div class="grid" style="margin-bottom:14px">
         <div class="stat"><div class="k">สมาชิกทั้งหมด</div><div class="v">${total}</div></div>
         <div class="stat"><div class="k">รายวัน</div><div class="v">${daily}</div></div>
         <div class="stat"><div class="k">รายสัปดาห์</div><div class="v">${weekly}</div></div>
         <div class="stat"><div class="k">รายเดือน</div><div class="v">${monthly}</div></div>
         <div class="stat"><div class="k">รายปี</div><div class="v">${yearly}</div></div>
+      </div>
+
+      <div class="grid" style="grid-template-columns: 1.2fr 1fr; gap:12px; align-items:start;">
+        <section class="stat" style="padding:0;overflow:hidden;">
+          <div style="padding:12px 12px 0"><strong>สมาชิกสมัครล่าสุด</strong></div>
+          <div style="overflow:auto; padding:8px 12px 12px;">
+            <table>
+              <thead><tr><th>ID</th><th>ชื่อ</th><th>สถานะ</th><th>วันที่สมัคร</th></tr></thead>
+              <tbody>${latestMembers || '<tr><td colspan="4">ยังไม่มีข้อมูล</td></tr>'}</tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="stat" style="padding:0;overflow:hidden;">
+          <div style="padding:12px 12px 0"><strong>กิจกรรมล่าสุด (Audit)</strong></div>
+          <div style="overflow:auto; padding:8px 12px 12px;">
+            <table>
+              <thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>เหตุการณ์</th><th>รายละเอียด</th></tr></thead>
+              <tbody>${recentLogs || '<tr><td colspan="4">ยังไม่มีประวัติ</td></tr>'}</tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </main>
   `);
