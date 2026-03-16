@@ -18,6 +18,21 @@ const frameTxFile = path.join(dataDir, 'frame-transactions.json');
 const boardPostsFile = path.join(dataDir, 'board-posts.json');
 
 const userSessions = new Map(); // sid -> { email, username }
+const actionTs = new Map(); // anti-spam in-memory
+
+function isSpamAction(key, cooldownMs = 2500) {
+  const now = Date.now();
+  const last = actionTs.get(key) || 0;
+  if (now - last < cooldownMs) return true;
+  actionTs.set(key, now);
+  return false;
+}
+
+function containsBlockedWords(text) {
+  const bad = ['พนัน', 'ยาเสพติด', 'ขายบริการ', 'scam', 'โกง'];
+  const t = String(text || '').toLowerCase();
+  return bad.some((w) => t.includes(w.toLowerCase()));
+}
 
 function ensureData() {
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -189,7 +204,7 @@ function profilePage(user, message = '') {
     <main class="card" style="display:grid;gap:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
         <h2 style="margin:0">โปรไฟล์ผู้ใช้</h2>
-        <div style="display:flex;gap:8px"><a class="btn" href="/board">Webboard</a><a class="btn" href="/vip">VIP</a><a class="btn" href="/wallet">Wallet</a><a class="btn" href="/match">Match</a><a class="btn" href="/">หน้าแรก</a><a class="btn" href="/logout">Logout</a></div>
+        <div style="display:flex;gap:8px"><a class="btn" href="/security">Security</a><a class="btn" href="/board">Webboard</a><a class="btn" href="/vip">VIP</a><a class="btn" href="/wallet">Wallet</a><a class="btn" href="/match">Match</a><a class="btn" href="/">หน้าแรก</a><a class="btn" href="/logout">Logout</a></div>
       </div>
       ${message ? `<div class="ok">${message}</div>` : ''}
       <section class="card" style="padding:14px;border-radius:12px">
@@ -314,6 +329,38 @@ function renderChatPage(me, matchId, info = '') {
         <form method="POST" action="/chat/${matchId}/block"><button class="btn" type="submit">⛔ Block</button></form>
         <form method="POST" action="/chat/${matchId}/report"><button class="btn" type="submit">🚩 Report</button></form>
       </div>
+    </main>
+  `);
+}
+
+function renderSecurityPage(me, info = '') {
+  const privacy = me.privacy || { profileVisibility: 'public', messagePermission: 'match_only', showOnline: true };
+  return htmlPage('Security & Privacy', `
+    <main class="card" style="display:grid;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">Security & Privacy</h2><div style="display:flex;gap:8px"><a class="btn" href="/profile">โปรไฟล์</a><a class="btn" href="/match">Match</a></div></div>
+      ${info ? `<div class="ok">${info}</div>` : ''}
+      <section class="card" style="padding:12px;border-radius:12px">
+        <strong>Selfie Verify (Demo)</strong>
+        <p class="muted">ใช้สำหรับยืนยันตัวตนและแสดงป้าย verified</p>
+        <form method="POST" action="/security/selfie-verify"><button class="btn btn-primary" type="submit">ยืนยันตัวตนด้วย Selfie</button></form>
+      </section>
+      <section class="card" style="padding:12px;border-radius:12px">
+        <strong>Privacy Settings</strong>
+        <form method="POST" action="/security/privacy" class="grid" style="margin-top:8px">
+          <div><label>การมองเห็นโปรไฟล์</label><select name="profileVisibility"><option value="public" ${privacy.profileVisibility==='public'?'selected':''}>public</option><option value="members" ${privacy.profileVisibility==='members'?'selected':''}>members</option><option value="private" ${privacy.profileVisibility==='private'?'selected':''}>private</option></select></div>
+          <div><label>สิทธิ์ส่งข้อความ</label><select name="messagePermission"><option value="all" ${privacy.messagePermission==='all'?'selected':''}>all</option><option value="match_only" ${privacy.messagePermission==='match_only'?'selected':''}>match_only</option><option value="none" ${privacy.messagePermission==='none'?'selected':''}>none</option></select></div>
+          <div><label>แสดงสถานะออนไลน์</label><select name="showOnline"><option value="true" ${privacy.showOnline?'selected':''}>true</option><option value="false" ${!privacy.showOnline?'selected':''}>false</option></select></div>
+          <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" type="submit">บันทึก Privacy</button></div>
+        </form>
+      </section>
+      <section class="card" style="padding:12px;border-radius:12px">
+        <strong>Moderation Rules</strong>
+        <ul class="muted">
+          <li>Anti-spam: กันกดซ้ำถี่ภายในไม่กี่วินาที</li>
+          <li>Content moderation: บล็อคคำเสี่ยงอัตโนมัติ</li>
+          <li>Report/Block: ใช้ได้ในหน้าแชทและแมตช์</li>
+        </ul>
+      </section>
     </main>
   `);
 }
@@ -908,6 +955,16 @@ const server = http.createServer((req, res) => {
         res.end(renderChatPage(me, matchId, 'กรุณาพิมพ์ข้อความก่อนส่ง'));
         return;
       }
+      if (isSpamAction(`chat:send:${me.username}`, 1200)) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderChatPage(me, matchId, 'ส่งข้อความเร็วเกินไป กรุณารอสักครู่'));
+        return;
+      }
+      if (containsBlockedWords(txt)) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderChatPage(me, matchId, 'ข้อความมีเนื้อหาที่ไม่เหมาะสม'));
+        return;
+      }
       const messages = readJson(messagesFile);
       messages.push({ id: `MSG${Date.now()}`, matchId, sender: me.username, text: txt, at: Date.now(), read: false });
       writeJson(messagesFile, messages);
@@ -1165,6 +1222,72 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (url.pathname === '/security' && req.method === 'GET') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderSecurityPage(me));
+    return;
+  }
+
+  if (url.pathname === '/security/selfie-verify' && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    const users = readJson(usersFile);
+    const idx = users.findIndex((u) => u.username === me.username);
+    if (idx >= 0) {
+      users[idx].verifiedBadge = true;
+      users[idx].photoVerified = true;
+      users[idx].updatedAt = Date.now();
+      writeJson(usersFile, users);
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderSecurityPage(users[idx], 'ยืนยันตัวตนด้วย Selfie สำเร็จ (demo)'));
+      return;
+    }
+    res.writeHead(302, { Location: '/login' });
+    res.end();
+    return;
+  }
+
+  if (url.pathname === '/security/privacy' && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const users = readJson(usersFile);
+      const idx = users.findIndex((u) => u.username === me.username);
+      if (idx >= 0) {
+        users[idx].privacy = {
+          profileVisibility: ['public', 'members', 'private'].includes(body.profileVisibility) ? body.profileVisibility : 'public',
+          messagePermission: ['all', 'match_only', 'none'].includes(body.messagePermission) ? body.messagePermission : 'match_only',
+          showOnline: String(body.showOnline) === 'true',
+        };
+        users[idx].updatedAt = Date.now();
+        writeJson(usersFile, users);
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderSecurityPage(users[idx], 'บันทึก Privacy Settings แล้ว'));
+        return;
+      }
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+    });
+    return;
+  }
+
   if (url.pathname === '/board' && req.method === 'GET') {
     const me = getSessionUser(req);
     if (!me) {
@@ -1197,6 +1320,16 @@ const server = http.createServer((req, res) => {
         res.end(renderBoardPage(me, {}, 'กรอกหัวข้อและเนื้อหาให้ครบ'));
         return;
       }
+      if (isSpamAction(`board:new:${me.username}`, 3000)) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderBoardPage(me, {}, 'คุณโพสต์ถี่เกินไป กรุณารอสักครู่'));
+        return;
+      }
+      if (containsBlockedWords(title) || containsBlockedWords(content)) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderBoardPage(me, {}, 'เนื้อหามีคำที่ไม่เหมาะสม ระบบไม่อนุญาตให้โพสต์'));
+        return;
+      }
       const posts = readJson(boardPostsFile);
       posts.push({ id: `P${Date.now()}`, author: me.username, title, content, category, likes: 0, comments: [], reports: 0, pinned: false, createdAt: Date.now() });
       writeJson(boardPostsFile, posts);
@@ -1218,6 +1351,11 @@ const server = http.createServer((req, res) => {
       const posts = readJson(boardPostsFile);
       const idx = posts.findIndex((p) => p.id === postId);
       if (idx >= 0 && comment) {
+        if (isSpamAction(`board:comment:${me.username}`, 2000) || containsBlockedWords(comment)) {
+          res.writeHead(302, { Location: '/board' });
+          res.end();
+          return;
+        }
         posts[idx].comments = Array.isArray(posts[idx].comments) ? posts[idx].comments : [];
         posts[idx].comments.push({ by: me.username, text: comment, at: Date.now() });
         writeJson(boardPostsFile, posts);
