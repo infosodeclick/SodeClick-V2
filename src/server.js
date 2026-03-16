@@ -361,9 +361,9 @@ function renderUserApp(session) {
           <div class="composer-actions">
             <div class="tool-row">
               <button type="button" class="icon-btn" id="pickImageBtn">📷 รูป</button>
-              <div style="position:relative">
-                <button type="button" class="icon-btn" id="emojiToggleBtn">😊 อีโมจิ</button>
-                <div id="emojiPanel" class="hidden" style="position:absolute;z-index:20;top:40px;left:0;background:#fff;border:1px solid #dbe3f0;border-radius:10px;padding:8px;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;min-width:220px">
+              <details style="position:relative">
+                <summary class="icon-btn" style="list-style:none">😊 อีโมจิ</summary>
+                <div style="position:absolute;z-index:20;top:40px;left:0;background:#fff;border:1px solid #dbe3f0;border-radius:10px;padding:8px;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;min-width:220px">
                   <button type="button" class="icon-btn emoji-pick" data-emoji="😊">😊</button>
                   <button type="button" class="icon-btn emoji-pick" data-emoji="😂">😂</button>
                   <button type="button" class="icon-btn emoji-pick" data-emoji="❤️">❤️</button>
@@ -377,7 +377,7 @@ function renderUserApp(session) {
                   <button type="button" class="icon-btn emoji-pick" data-emoji="✨">✨</button>
                   <button type="button" class="icon-btn emoji-pick" data-emoji="🙏">🙏</button>
                 </div>
-              </div>
+              </details>
               <input id="imageInput" type="file" accept="image/*" class="hidden" />
             </div>
             <button type="button" class="send-btn" id="postBtn">โพสต์</button>
@@ -541,12 +541,6 @@ function renderUserApp(session) {
         reader.readAsDataURL(file);
       });
 
-      const emojiToggleBtn = document.getElementById('emojiToggleBtn');
-      const emojiPanel = document.getElementById('emojiPanel');
-      emojiToggleBtn.addEventListener('click', function () {
-        emojiPanel.classList.toggle('hidden');
-      });
-
       const emojiButtons = document.querySelectorAll('.emoji-pick');
       for (let i = 0; i < emojiButtons.length; i += 1) {
         emojiButtons[i].addEventListener('click', function () {
@@ -554,15 +548,8 @@ function renderUserApp(session) {
           const ta = document.getElementById('postInput');
           ta.value = (ta.value || '') + emo;
           ta.focus();
-          emojiPanel.classList.add('hidden');
         });
       }
-
-      document.addEventListener('click', function (e) {
-        if (!emojiPanel.contains(e.target) && e.target !== emojiToggleBtn) {
-          emojiPanel.classList.add('hidden');
-        }
-      });
 
       document.getElementById('postBtn').addEventListener('click', function () {
         const ta = document.getElementById('postInput');
