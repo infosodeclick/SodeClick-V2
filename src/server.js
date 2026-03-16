@@ -366,10 +366,10 @@ function renderUserApp(session) {
       .tool-row { display:flex; flex-wrap:wrap; gap:8px; }
       .icon-btn { border:1px solid #dbe3f0; border-radius:10px; background:#fff; padding:7px 10px; cursor:pointer; }
       .emoji-wrap { position:relative; }
-      .emoji-panel { position:absolute; bottom:42px; left:0; width:340px; background:#fff; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 18px 35px rgba(0,0,0,.18); padding:10px; z-index:30; }
+      .emoji-panel { position:absolute; bottom:42px; right:0; left:auto; width:340px; max-width:min(340px, calc(100vw - 40px)); background:#fff; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 18px 35px rgba(0,0,0,.18); padding:10px; z-index:30; overflow:hidden; }
       .emoji-head { color:#6b7280; font-size:13px; margin-bottom:6px; font-weight:700; }
-      .emoji-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:6px; }
-      .emoji-chip { border:0; background:#fff; border-radius:8px; font-size:23px; line-height:1; padding:5px; cursor:pointer; }
+      .emoji-grid { display:grid; grid-template-columns:repeat(8, minmax(0,1fr)); gap:6px; max-width:100%; overflow:hidden; }
+      .emoji-chip { border:0; background:#fff; border-radius:8px; font-size:22px; line-height:1; padding:5px; cursor:pointer; width:100%; }
       .emoji-chip:hover { background:#f3f4f6; }
       .send-btn { padding:8px 14px; border:0; border-radius:10px; font-weight:700; color:#fff; background:linear-gradient(135deg,#60a5fa,#f9a8d4); cursor:pointer; }
       .feed-list { display:grid; gap:10px; }
@@ -387,6 +387,10 @@ function renderUserApp(session) {
       .reply-item { border:1px solid #e5e7eb; border-radius:8px; background:#f8fafc; padding:7px 8px; font-size:14px; }
       .empty-feed { border:1px dashed #cbd5e1; border-radius:12px; background:#fff; padding:16px; color:#64748b; text-align:center; }
       .hidden { display:none; }
+      @media (max-width: 640px) {
+        .emoji-panel { width:300px; right:0; }
+        .emoji-grid { grid-template-columns:repeat(7, minmax(0,1fr)); }
+      }
     </style>
 
     <main class="card social-wrap">
