@@ -1,4 +1,4 @@
-const http = require('http');
+﻿const http = require('http');
 const crypto = require('crypto');
 
 const port = process.env.PORT || 3000;
@@ -111,9 +111,9 @@ function requirePermission(session, action, res) {
     res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(htmlPage('403 - Forbidden', `
       <main class="card">
-        <h2>403 - ไม่มีสิทธิ์เข้าถึง</h2>
-        <p>บัญชีของคุณ (${session.username}) ไม่มีสิทธิ์สำหรับคำสั่งนี้</p>
-        <a class="btn" href="/admin/dashboard">กลับแดชบอร์ด</a>
+        <h2>403 - à¹„à¸¡à¹ˆà¸¡à¸µà¸ªà¸´à¸—à¸˜à¸´à¹Œà¹€à¸‚à¹‰à¸²à¸–à¸¶à¸‡</h2>
+        <p>à¸šà¸±à¸à¸Šà¸µà¸‚à¸­à¸‡à¸„à¸¸à¸“ (${session.username}) à¹„à¸¡à¹ˆà¸¡à¸µà¸ªà¸´à¸—à¸˜à¸´à¹Œà¸ªà¸³à¸«à¸£à¸±à¸šà¸„à¸³à¸ªà¸±à¹ˆà¸‡à¸™à¸µà¹‰</p>
+        <a class="btn" href="/admin/dashboard">à¸à¸¥à¸±à¸šà¹à¸”à¸Šà¸šà¸­à¸£à¹Œà¸”</a>
       </main>
     `));
     return false;
@@ -245,13 +245,13 @@ function adminShell(session, activeKey, content) {
   return `
     <div class="admin-layout">
       <aside class="sidebar">
-        <div class="side-title">เมนูหลังบ้าน</div>
-        ${item('dashboard', '/admin/dashboard', 'ภาพรวม')}
-        ${item('members', '/admin/members', 'สมาชิก')}
-        ${item('revenue', '/admin/revenue', 'รายได้')}
-        ${item('promotions', '/admin/promotions', 'โปรโมชั่น')}
-        ${item('activities', '/admin/activities', 'กิจกรรม')}
-        <a class="side-link" href="/admin/logout">ออกจากระบบ</a>
+        <div class="side-title">à¹€à¸¡à¸™à¸¹à¸«à¸¥à¸±à¸‡à¸šà¹‰à¸²à¸™</div>
+        ${item('dashboard', '/admin/dashboard', 'à¸ à¸²à¸žà¸£à¸§à¸¡')}
+        ${item('members', '/admin/members', 'à¸ªà¸¡à¸²à¸Šà¸´à¸')}
+        ${item('revenue', '/admin/revenue', 'à¸£à¸²à¸¢à¹„à¸”à¹‰')}
+        ${item('promotions', '/admin/promotions', 'à¹‚à¸›à¸£à¹‚à¸¡à¸Šà¸±à¹ˆà¸™')}
+        ${item('activities', '/admin/activities', 'à¸à¸´à¸ˆà¸à¸£à¸£à¸¡')}
+        <a class="side-link" href="/admin/logout">à¸­à¸­à¸à¸ˆà¸²à¸à¸£à¸°à¸šà¸š</a>
       </aside>
       <section>${content}</section>
     </div>
@@ -275,9 +275,9 @@ function renderHome() {
         <h2 style="margin:0">SodeClick V2</h2>
         <a class="btn btn-primary" href="/login">Login</a>
       </div>
-      <p>ใช้ Login เดียว ระบบจะตรวจสิทธิ์อัตโนมัติ (ผู้มีสิทธิ์เข้าหลังบ้านได้ทันที)</p>
+      <p>à¹ƒà¸Šà¹‰ Login à¹€à¸”à¸µà¸¢à¸§ à¸£à¸°à¸šà¸šà¸ˆà¸°à¸•à¸£à¸§à¸ˆà¸ªà¸´à¸—à¸˜à¸´à¹Œà¸­à¸±à¸•à¹‚à¸™à¸¡à¸±à¸•à¸´ (à¸œà¸¹à¹‰à¸¡à¸µà¸ªà¸´à¸—à¸˜à¸´à¹Œà¹€à¸‚à¹‰à¸²à¸«à¸¥à¸±à¸‡à¸šà¹‰à¸²à¸™à¹„à¸”à¹‰à¸—à¸±à¸™à¸—à¸µ)</p>
       <div class="grid" style="margin-top:12px">
-        <div class="stat"><div class="k">โครงระบบ</div><div class="v">พร้อม</div></div>
+        <div class="stat"><div class="k">à¹‚à¸„à¸£à¸‡à¸£à¸°à¸šà¸š</div><div class="v">à¸žà¸£à¹‰à¸­à¸¡</div></div>
         <div class="stat"><div class="k">Health</div><div class="v">OK</div></div>
       </div>
     </main>
@@ -287,7 +287,7 @@ function renderHome() {
 function renderAdminLogin(error = '') {
   return htmlPage('Admin Login - SodeClick V2', `
     <div class="login">
-      <h2 style="margin-top:0">เข้าสู่ระบบหลังบ้าน</h2>
+      <h2 style="margin-top:0">à¹€à¸‚à¹‰à¸²à¸ªà¸¹à¹ˆà¸£à¸°à¸šà¸šà¸«à¸¥à¸±à¸‡à¸šà¹‰à¸²à¸™</h2>
       ${error ? `<p style="color:#dc2626;font-weight:700">${error}</p>` : ''}
       <form method="POST" action="/admin/login">
         <label>Username</label>
@@ -296,7 +296,7 @@ function renderAdminLogin(error = '') {
         <input name="password" type="password" required />
         <button class="btn btn-primary" style="width:100%;margin-top:12px" type="submit">Login</button>
       </form>
-      <p class="muted">บัญชีทดสอบ: admin/123456, manager/123456, staff/123456</p>
+      <p class="muted">à¸šà¸±à¸à¸Šà¸µà¸—à¸”à¸ªà¸­à¸š: admin/123456, manager/123456, staff/123456</p>
     </div>
   `);
 }
@@ -304,213 +304,53 @@ function renderAdminLogin(error = '') {
 function renderUserLogin(error = '') {
   return htmlPage('Login - SodeClick V2', `
     <div class="login">
-      <h2 style="margin-top:0">เข้าสู่ระบบผู้ใช้งาน</h2>
+      <h2 style="margin-top:0">à¹€à¸‚à¹‰à¸²à¸ªà¸¹à¹ˆà¸£à¸°à¸šà¸šà¸œà¸¹à¹‰à¹ƒà¸Šà¹‰à¸‡à¸²à¸™</h2>
       ${error ? `<p style="color:#dc2626;font-weight:700">${error}</p>` : ''}
       <form method="POST" action="/login">
         <label>Username</label>
         <input name="username" required />
         <label style="margin-top:8px;display:block">Password</label>
         <input name="password" type="password" required />
-        <button class="btn btn-primary" style="width:100%;margin-top:12px" type="submit">เข้าสู่ระบบ</button>
+        <button class="btn btn-primary" style="width:100%;margin-top:12px" type="submit">à¹€à¸‚à¹‰à¸²à¸ªà¸¹à¹ˆà¸£à¸°à¸šà¸š</button>
       </form>
-      <p class="muted">บัญชีตัวอย่างเดโม: user / 123456 และ admin / 123456</p>
+      <p class="muted">à¸šà¸±à¸à¸Šà¸µà¸•à¸±à¸§à¸­à¸¢à¹ˆà¸²à¸‡à¹€à¸”à¹‚à¸¡: user / 123456 à¹à¸¥à¸° admin / 123456</p>
     </div>
   `);
 }
 
 function renderUserApp(session) {
-  return `<!doctype html>
-<html lang="th">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>หน้าบ้าน - SodeClick V2</title>
-  <style>
-    * { box-sizing:border-box; }
-    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:#f3f4f6; color:#111827; }
-    .topbar { height:56px; background:#3b82f6; color:#fff; display:flex; align-items:center; padding:0 14px; gap:16px; }
-    .brand { font-weight:800; }
-    .top-menu { display:flex; gap:18px; font-weight:600; font-size:14px; opacity:.95; }
-    .shell { display:grid; grid-template-columns: 220px 1fr 250px; min-height: calc(100vh - 56px); }
-    .left { background:#fff; border-right:1px solid #e5e7eb; padding:14px; }
-    .left a { display:block; padding:10px 8px; border-radius:8px; text-decoration:none; color:#374151; font-weight:600; }
-    .left a:hover { background:#f3f4f6; }
-    .center { padding:14px; }
-    .board { background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }
-    .toolbar { padding:10px; border-bottom:1px solid #e5e7eb; display:flex; gap:8px; align-items:center; }
-    .tool { border:1px solid #d1d5db; background:#fff; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; }
-    .composer { padding:10px; border-bottom:1px solid #e5e7eb; display:grid; gap:8px; }
-    .composer textarea { width:100%; border:1px solid #d1d5db; border-radius:10px; padding:10px; min-height:72px; font-family:inherit; }
-    .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; }
-    .btn { border:1px solid #cbd5e1; background:#fff; border-radius:10px; padding:8px 12px; font-weight:700; cursor:pointer; }
-    .btn-primary { background:linear-gradient(135deg,#60a5fa,#f9a8d4); color:#fff; border:0; }
-    .feed { padding:8px 10px 14px; display:grid; gap:10px; }
-    .post { border:1px solid #e5e7eb; border-radius:10px; padding:10px; background:#fff; }
-    .post-head { display:flex; gap:10px; align-items:center; margin-bottom:6px; }
-    .avatar-sm { width:40px; height:40px; border-radius:999px; background:linear-gradient(135deg,#bfdbfe,#fbcfe8); }
-    .u { font-weight:700; }
-    .t { font-size:12px; color:#6b7280; }
-    .msg { margin:6px 0; font-size:16px; white-space:pre-wrap; }
-    .msg img { margin-top:8px; max-width:100%; border-radius:8px; border:1px solid #e5e7eb; }
-    .post-actions { color:#6b7280; font-size:13px; margin-bottom:6px; display:flex; gap:12px; }
-    .reply { width:100%; border:1px solid #dbeafe; border-radius:8px; padding:8px; }
-    .replies { margin-top:8px; display:grid; gap:6px; }
-    .reply-item { background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:7px 8px; font-size:14px; }
-    .right { background:#fff; border-left:1px solid #e5e7eb; padding:14px; }
-    .profile-card { border:1px solid #e5e7eb; border-radius:10px; padding:12px; background:#f8fafc; }
-    .hidden { display:none; }
-    @media (max-width: 980px) { .shell { grid-template-columns: 1fr; } .left,.right { border:0; } }
-  </style>
-</head>
-<body>
-  <header class="topbar">
-    <div class="brand">SodeClick</div>
-    <nav class="top-menu">
-      <span>กระดาน</span><span>ออนไลน์</span><span>ดีเจ</span><span>ซุปตาร์</span><span>เกมส์</span>
-    </nav>
-    <div style="margin-left:auto"><a href="/logout" style="color:#fff;text-decoration:none;font-weight:700">ออกจากระบบ</a></div>
-  </header>
+  return htmlPage('หน้าบ้าน - SodeClick V2', `
+    <main class="card">
+      <div class="head">
+        <h2 style="margin:0">กระดานโต้ตอบ</h2>
+        <a class="btn" href="/logout">ออกจากระบบ</a>
+      </div>
 
-  <main class="shell">
-    <aside class="left">
-      <a href="#">หน้าหลัก</a>
-      <a href="#">กระดานโต้ตอบ</a>
-      <a href="#">ห้องแชท</a>
-      <a href="#">เพื่อนออนไลน์</a>
-      <a href="#">โปรไฟล์ฉัน</a>
-    </aside>
+      <section class="stat" style="margin-bottom:12px">
+        <strong>ยินดีต้อนรับ, ${session.displayName || session.username}</strong>
+        <p class="muted" style="margin:6px 0 0">ตอนนี้ระบบกลับมาใช้งานได้ปกติแล้ว</p>
+      </section>
 
-    <section class="center">
-      <div class="board">
-        <div class="toolbar">
-          <button class="tool emoji-insert" data-emoji="😊">😊</button>
-          <button class="tool emoji-insert" data-emoji="❤️">❤️</button>
-          <button class="tool emoji-insert" data-emoji="😂">😂</button>
-          <button class="tool">ออโต้ ▾</button>
-        </div>
-        <div class="composer">
-          <textarea id="postText" placeholder="โพสต์อะไรดีวันนี้..."></textarea>
-          <div class="row">
-            <button class="btn btn-primary" id="postBtn">โพสต์</button>
+      <section class="stat" style="margin-bottom:12px">
+        <strong>โพสต์ใหม่</strong>
+        <form method="GET" action="/app" style="display:grid;gap:8px;margin-top:8px">
+          <textarea placeholder="โพสต์อะไรดีวันนี้..." style="width:100%;min-height:90px;border:1px solid #d1d5db;border-radius:10px;padding:10px"></textarea>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" type="submit">โพสต์</button>
           </div>
+        </form>
+      </section>
+
+      <section class="stat">
+        <strong>ฟีดตัวอย่าง</strong>
+        <div style="margin-top:8px;display:grid;gap:8px">
+          <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px">GN: คิดถึงมากไหมคะ 😂</div>
+          <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px">นกฮูกปลดแอก: เขาอาจจะคิดว่าพี่ขำหมดทุกคนก็ได้</div>
         </div>
-        <div class="feed" id="feed"></div>
-      </div>
-    </section>
-
-    <aside class="right">
-      <div class="profile-card">
-        <div style="font-weight:800">${session.displayName || session.username}</div>
-        <div style="color:#6b7280;font-size:13px">สถานะ: ออนไลน์</div>
-      </div>
-    </aside>
-  </main>
-
-  <script>
-    const STORAGE_KEY = 'sodeclick_v2_posts';
-    const username = ${JSON.stringify(session.displayName || session.username)};
-
-    const defaultPosts = [
-      { id: Date.now()-3, user:'GN', text:'คิดถึงมากไหมคะ 😂', image:null, likes:1, replies:[], at: new Date().toISOString() },
-      { id: Date.now()-2, user:'นกฮูกปลดแอก', text:'เขาอาจจะคิดว่าพี่ขำหมดทุกคนก็ได้', image:null, likes:3, replies:['จริงเลย 😂'], at: new Date().toISOString() },
-    ];
-
-    let posts = [];
-
-    function loadPosts() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-        posts = Array.isArray(saved) && saved.length ? saved : defaultPosts;
-      } catch {
-        posts = defaultPosts;
-      }
-      savePosts();
-    }
-
-    function savePosts() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
-    }
-
-    function renderFeed() {
-      const feed = document.getElementById('feed');
-      feed.innerHTML = posts.map((p, idx) => {
-        const replies = (p.replies || []).map((r) => '<div class="reply-item">' + r + '</div>').join('');
-        const img = p.image ? '<img src="' + p.image + '" alt="post-image" />' : '';
-        return '' +
-          '<article class="post">' +
-            '<div class="post-head">' +
-              '<div class="avatar-sm"></div>' +
-              '<div>' +
-                '<div class="u">' + p.user + '</div>' +
-                '<div class="t">' + new Date(p.at).toLocaleString('th-TH') + '</div>' +
-              '</div>' +
-            '</div>' +
-            '<div class="msg">' + (p.text || '') + img + '</div>' +
-            '<div class="post-actions">' +
-              '<button class="btn" onclick="likePost(' + idx + ')">👍 Like (' + (p.likes || 0) + ')</button>' +
-            '</div>' +
-            '<input class="reply" id="reply-' + idx + '" placeholder="เขียนตอบกลับ..." />' +
-            '<div class="row" style="margin-top:6px"><button class="btn" onclick="replyPost(' + idx + ')">ตอบกลับ</button></div>' +
-            '<div class="replies">' + replies + '</div>' +
-          '</article>';
-      }).join('');
-    }
-
-    function likePost(i) {
-      posts[i].likes = (posts[i].likes || 0) + 1;
-      savePosts();
-      renderFeed();
-    }
-
-    function replyPost(i) {
-      const input = document.getElementById('reply-' + i);
-      const val = (input.value || '').trim();
-      if (!val) return;
-      posts[i].replies = posts[i].replies || [];
-      posts[i].replies.push(username + ': ' + val);
-      input.value = '';
-      savePosts();
-      renderFeed();
-    }
-
-
-
-    document.querySelectorAll('.emoji-insert').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const ta = document.getElementById('postText');
-        ta.value += btn.dataset.emoji;
-        ta.focus();
-      });
-    });
-
-    document.getElementById('postBtn').addEventListener('click', () => {
-      const ta = document.getElementById('postText');
-      const text = (ta.value || '').trim();
-      if (!text) return;
-      posts.unshift({
-        id: Date.now(),
-        user: username,
-        text,
-        image: null,
-        likes: 0,
-        replies: [],
-        at: new Date().toISOString(),
-      });
-      ta.value = '';
-      savePosts();
-      renderFeed();
-    });
-
-    loadPosts();
-    renderFeed();
-
-    window.likePost = likePost;
-    window.replyPost = replyPost;
-  </script>
-</body>
-</html>`;
+      </section>
+    </main>
+  `);
 }
-
 function renderAdminDashboard(session) {
   const now = new Date();
   const day = startOfDay(now);
@@ -527,7 +367,7 @@ function renderAdminDashboard(session) {
   const latestMembers = [...members]
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, 5)
-    .map((m) => `<tr><td>${m.id}</td><td>${m.name}</td><td>${m.status === 'blocked' ? 'บล็อก' : 'ปกติ'}</td><td>${m.createdAt.toLocaleDateString('th-TH')}</td></tr>`)
+    .map((m) => `<tr><td>${m.id}</td><td>${m.name}</td><td>${m.status === 'blocked' ? 'à¸šà¸¥à¹‡à¸­à¸' : 'à¸›à¸à¸•à¸´'}</td><td>${m.createdAt.toLocaleDateString('th-TH')}</td></tr>`)
     .join('');
 
   const recentLogs = auditLogs
@@ -539,42 +379,42 @@ function renderAdminDashboard(session) {
     <main class="card">
       <div class="head">
         <div class="topline">
-          <h2 style="margin:0">แดชบอร์ดหลังบ้าน</h2>
-          <span class="pill">ผู้ใช้: ${session.username}</span>
-          <span class="pill">สิทธิ์: ${session.role}</span>
+          <h2 style="margin:0">à¹à¸”à¸Šà¸šà¸­à¸£à¹Œà¸”à¸«à¸¥à¸±à¸‡à¸šà¹‰à¸²à¸™</h2>
+          <span class="pill">à¸œà¸¹à¹‰à¹ƒà¸Šà¹‰: ${session.username}</span>
+          <span class="pill">à¸ªà¸´à¸—à¸˜à¸´à¹Œ: ${session.role}</span>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <a class="btn" href="/admin/members">จัดการสมาชิก</a>
+          <a class="btn" href="/admin/members">à¸ˆà¸±à¸”à¸à¸²à¸£à¸ªà¸¡à¸²à¸Šà¸´à¸</a>
           <a class="btn" href="/admin/audit">Audit Log</a>
-          <a class="btn" href="/admin/logout">ออกจากระบบ</a>
+          <a class="btn" href="/admin/logout">à¸­à¸­à¸à¸ˆà¸²à¸à¸£à¸°à¸šà¸š</a>
         </div>
       </div>
 
       <div class="grid" style="margin-bottom:14px">
-        <div class="stat"><div class="k">สมาชิกทั้งหมด</div><div class="v">${total}</div></div>
-        <div class="stat"><div class="k">รายวัน</div><div class="v">${daily}</div></div>
-        <div class="stat"><div class="k">รายสัปดาห์</div><div class="v">${weekly}</div></div>
-        <div class="stat"><div class="k">รายเดือน</div><div class="v">${monthly}</div></div>
-        <div class="stat"><div class="k">รายปี</div><div class="v">${yearly}</div></div>
+        <div class="stat"><div class="k">à¸ªà¸¡à¸²à¸Šà¸´à¸à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”</div><div class="v">${total}</div></div>
+        <div class="stat"><div class="k">à¸£à¸²à¸¢à¸§à¸±à¸™</div><div class="v">${daily}</div></div>
+        <div class="stat"><div class="k">à¸£à¸²à¸¢à¸ªà¸±à¸›à¸”à¸²à¸«à¹Œ</div><div class="v">${weekly}</div></div>
+        <div class="stat"><div class="k">à¸£à¸²à¸¢à¹€à¸”à¸·à¸­à¸™</div><div class="v">${monthly}</div></div>
+        <div class="stat"><div class="k">à¸£à¸²à¸¢à¸›à¸µ</div><div class="v">${yearly}</div></div>
       </div>
 
       <div class="grid" style="grid-template-columns: 1.2fr 1fr; gap:12px; align-items:start;">
         <section class="stat" style="padding:0;overflow:hidden;">
-          <div style="padding:12px 12px 0"><strong>สมาชิกสมัครล่าสุด</strong></div>
+          <div style="padding:12px 12px 0"><strong>à¸ªà¸¡à¸²à¸Šà¸´à¸à¸ªà¸¡à¸±à¸„à¸£à¸¥à¹ˆà¸²à¸ªà¸¸à¸”</strong></div>
           <div style="overflow:auto; padding:8px 12px 12px;">
             <table>
-              <thead><tr><th>ID</th><th>ชื่อ</th><th>สถานะ</th><th>วันที่สมัคร</th></tr></thead>
-              <tbody>${latestMembers || '<tr><td colspan="4">ยังไม่มีข้อมูล</td></tr>'}</tbody>
+              <thead><tr><th>ID</th><th>à¸Šà¸·à¹ˆà¸­</th><th>à¸ªà¸–à¸²à¸™à¸°</th><th>à¸§à¸±à¸™à¸—à¸µà¹ˆà¸ªà¸¡à¸±à¸„à¸£</th></tr></thead>
+              <tbody>${latestMembers || '<tr><td colspan="4">à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸‚à¹‰à¸­à¸¡à¸¹à¸¥</td></tr>'}</tbody>
             </table>
           </div>
         </section>
 
         <section class="stat" style="padding:0;overflow:hidden;">
-          <div style="padding:12px 12px 0"><strong>กิจกรรมล่าสุด (Audit)</strong></div>
+          <div style="padding:12px 12px 0"><strong>à¸à¸´à¸ˆà¸à¸£à¸£à¸¡à¸¥à¹ˆà¸²à¸ªà¸¸à¸” (Audit)</strong></div>
           <div style="overflow:auto; padding:8px 12px 12px;">
             <table>
-              <thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>เหตุการณ์</th><th>รายละเอียด</th></tr></thead>
-              <tbody>${recentLogs || '<tr><td colspan="4">ยังไม่มีประวัติ</td></tr>'}</tbody>
+              <thead><tr><th>à¹€à¸§à¸¥à¸²</th><th>à¸œà¸¹à¹‰à¹ƒà¸Šà¹‰</th><th>à¹€à¸«à¸•à¸¸à¸à¸²à¸£à¸“à¹Œ</th><th>à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸”</th></tr></thead>
+              <tbody>${recentLogs || '<tr><td colspan="4">à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸›à¸£à¸°à¸§à¸±à¸•à¸´</td></tr>'}</tbody>
             </table>
           </div>
         </section>
@@ -628,11 +468,11 @@ function renderAdminDashboardV2(session, queryParams) {
     : 0;
 
   const selectedMap = {
-    day: { label: 'ช่วงที่เลือก: รายวัน', value: daily },
-    week: { label: 'ช่วงที่เลือก: รายสัปดาห์', value: weekly },
-    month: { label: 'ช่วงที่เลือก: รายเดือน', value: monthly },
-    year: { label: 'ช่วงที่เลือก: รายปี', value: yearly },
-    custom: { label: 'ช่วงที่เลือก: วันที่กำหนดเอง', value: customCount },
+    day: { label: 'à¸Šà¹ˆà¸§à¸‡à¸—à¸µà¹ˆà¹€à¸¥à¸·à¸­à¸: à¸£à¸²à¸¢à¸§à¸±à¸™', value: daily },
+    week: { label: 'à¸Šà¹ˆà¸§à¸‡à¸—à¸µà¹ˆà¹€à¸¥à¸·à¸­à¸: à¸£à¸²à¸¢à¸ªà¸±à¸›à¸”à¸²à¸«à¹Œ', value: weekly },
+    month: { label: 'à¸Šà¹ˆà¸§à¸‡à¸—à¸µà¹ˆà¹€à¸¥à¸·à¸­à¸: à¸£à¸²à¸¢à¹€à¸”à¸·à¸­à¸™', value: monthly },
+    year: { label: 'à¸Šà¹ˆà¸§à¸‡à¸—à¸µà¹ˆà¹€à¸¥à¸·à¸­à¸: à¸£à¸²à¸¢à¸›à¸µ', value: yearly },
+    custom: { label: 'à¸Šà¹ˆà¸§à¸‡à¸—à¸µà¹ˆà¹€à¸¥à¸·à¸­à¸: à¸§à¸±à¸™à¸—à¸µà¹ˆà¸à¸³à¸«à¸™à¸”à¹€à¸­à¸‡', value: customCount },
   };
   const selectedMetric = selectedMap[range] || selectedMap.month;
 
@@ -653,13 +493,13 @@ function renderAdminDashboardV2(session, queryParams) {
         guard += 1;
       }
       if (labels.length === 0) {
-        labels.push('ไม่มีข้อมูล');
+        labels.push('à¹„à¸¡à¹ˆà¸¡à¸µà¸‚à¹‰à¸­à¸¡à¸¹à¸¥');
         values.push(0);
       }
     } else if (range === 'day') {
       const s = new Date(day);
       const e = new Date(s); e.setDate(s.getDate() + 1);
-      labels.push('วันนี้');
+      labels.push('à¸§à¸±à¸™à¸™à¸µà¹‰');
       values.push(scopedMembers.filter((m) => m.createdAt >= s && m.createdAt < e).length);
     } else if (range === 'week') {
       for (let i = 7; i >= 0; i--) {
@@ -702,7 +542,7 @@ function renderAdminDashboardV2(session, queryParams) {
   const latestMembers = [...scopedMembers]
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, 5)
-    .map((m) => `<tr><td>${m.id}</td><td>${m.name}</td><td>${m.gender || '-'}</td><td>${m.status === 'blocked' ? 'บล็อก' : 'ปกติ'}</td><td>${m.createdAt.toLocaleDateString('th-TH')}</td></tr>`)
+    .map((m) => `<tr><td>${m.id}</td><td>${m.name}</td><td>${m.gender || '-'}</td><td>${m.status === 'blocked' ? 'à¸šà¸¥à¹‡à¸­à¸' : 'à¸›à¸à¸•à¸´'}</td><td>${m.createdAt.toLocaleDateString('th-TH')}</td></tr>`)
     .join('');
 
   const recentLogs = auditLogs
@@ -714,84 +554,84 @@ function renderAdminDashboardV2(session, queryParams) {
     <main class="card">
       <div class="head">
         <div class="topline">
-          <h2 style="margin:0">แดชบอร์ดหลังบ้าน</h2>
-          <span class="pill">ผู้ใช้: ${session.username}</span>
-          <span class="pill">สิทธิ์: ${session.role}</span>
+          <h2 style="margin:0">à¹à¸”à¸Šà¸šà¸­à¸£à¹Œà¸”à¸«à¸¥à¸±à¸‡à¸šà¹‰à¸²à¸™</h2>
+          <span class="pill">à¸œà¸¹à¹‰à¹ƒà¸Šà¹‰: ${session.username}</span>
+          <span class="pill">à¸ªà¸´à¸—à¸˜à¸´à¹Œ: ${session.role}</span>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <a class="btn" href="/admin/members">จัดการสมาชิก</a>
+          <a class="btn" href="/admin/members">à¸ˆà¸±à¸”à¸à¸²à¸£à¸ªà¸¡à¸²à¸Šà¸´à¸</a>
           <a class="btn" href="/admin/audit">Audit Log</a>
-          <a class="btn" href="/admin/logout">ออกจากระบบ</a>
+          <a class="btn" href="/admin/logout">à¸­à¸­à¸à¸ˆà¸²à¸à¸£à¸°à¸šà¸š</a>
         </div>
       </div>
 
       <form method="GET" action="/admin/dashboard" class="filters" style="margin-bottom:12px">
         <div>
-          <label class="muted">ช่วงเวลาแสดงกราฟ</label>
+          <label class="muted">à¸Šà¹ˆà¸§à¸‡à¹€à¸§à¸¥à¸²à¹à¸ªà¸”à¸‡à¸à¸£à¸²à¸Ÿ</label>
           <select name="range">
-            <option value="day" ${range === 'day' ? 'selected' : ''}>รายวัน (1 วัน)</option>
-            <option value="week" ${range === 'week' ? 'selected' : ''}>รายสัปดาห์</option>
-            <option value="month" ${range === 'month' ? 'selected' : ''}>รายเดือน</option>
-            <option value="year" ${range === 'year' ? 'selected' : ''}>รายปี</option>
-            <option value="custom" ${range === 'custom' ? 'selected' : ''}>กำหนดช่วงวันเอง</option>
+            <option value="day" ${range === 'day' ? 'selected' : ''}>à¸£à¸²à¸¢à¸§à¸±à¸™ (1 à¸§à¸±à¸™)</option>
+            <option value="week" ${range === 'week' ? 'selected' : ''}>à¸£à¸²à¸¢à¸ªà¸±à¸›à¸”à¸²à¸«à¹Œ</option>
+            <option value="month" ${range === 'month' ? 'selected' : ''}>à¸£à¸²à¸¢à¹€à¸”à¸·à¸­à¸™</option>
+            <option value="year" ${range === 'year' ? 'selected' : ''}>à¸£à¸²à¸¢à¸›à¸µ</option>
+            <option value="custom" ${range === 'custom' ? 'selected' : ''}>à¸à¸³à¸«à¸™à¸”à¸Šà¹ˆà¸§à¸‡à¸§à¸±à¸™à¹€à¸­à¸‡</option>
           </select>
         </div>
         <div>
-          <label class="muted">กรองสถานะสมาชิก</label>
+          <label class="muted">à¸à¸£à¸­à¸‡à¸ªà¸–à¸²à¸™à¸°à¸ªà¸¡à¸²à¸Šà¸´à¸</label>
           <select name="status">
-            <option value="all" ${status === 'all' ? 'selected' : ''}>ทั้งหมด</option>
-            <option value="active" ${status === 'active' ? 'selected' : ''}>ปกติ</option>
-            <option value="blocked" ${status === 'blocked' ? 'selected' : ''}>บล็อก</option>
+            <option value="all" ${status === 'all' ? 'selected' : ''}>à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”</option>
+            <option value="active" ${status === 'active' ? 'selected' : ''}>à¸›à¸à¸•à¸´</option>
+            <option value="blocked" ${status === 'blocked' ? 'selected' : ''}>à¸šà¸¥à¹‡à¸­à¸</option>
           </select>
         </div>
         <div>
-          <label class="muted">กรองเพศ</label>
+          <label class="muted">à¸à¸£à¸­à¸‡à¹€à¸žà¸¨</label>
           <select name="gender">
-            <option value="all" ${gender === 'all' ? 'selected' : ''}>ทั้งหมด</option>
-            <option value="male" ${gender === 'male' ? 'selected' : ''}>ชาย</option>
-            <option value="female" ${gender === 'female' ? 'selected' : ''}>หญิง</option>
-            <option value="other" ${gender === 'other' ? 'selected' : ''}>อื่นๆ</option>
+            <option value="all" ${gender === 'all' ? 'selected' : ''}>à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”</option>
+            <option value="male" ${gender === 'male' ? 'selected' : ''}>à¸Šà¸²à¸¢</option>
+            <option value="female" ${gender === 'female' ? 'selected' : ''}>à¸«à¸à¸´à¸‡</option>
+            <option value="other" ${gender === 'other' ? 'selected' : ''}>à¸­à¸·à¹ˆà¸™à¹†</option>
           </select>
         </div>
         <div>
-          <label class="muted">เริ่มวันที่ (Custom)</label>
+          <label class="muted">à¹€à¸£à¸´à¹ˆà¸¡à¸§à¸±à¸™à¸—à¸µà¹ˆ (Custom)</label>
           <input type="date" name="from" value="${fromDateStr}" />
         </div>
         <div>
-          <label class="muted">ถึงวันที่ (Custom)</label>
+          <label class="muted">à¸–à¸¶à¸‡à¸§à¸±à¸™à¸—à¸µà¹ˆ (Custom)</label>
           <input type="date" name="to" value="${toDateStr}" />
         </div>
         <button class="btn btn-primary" type="submit">Apply Filter</button>
       </form>
 
       <div class="grid" style="margin-bottom:14px">
-        <div class="stat"><div class="k">สมาชิกทั้งหมด (ตาม filter)</div><div class="v">${total}</div></div>
+        <div class="stat"><div class="k">à¸ªà¸¡à¸²à¸Šà¸´à¸à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸” (à¸•à¸²à¸¡ filter)</div><div class="v">${total}</div></div>
         <div class="stat"><div class="k">${selectedMetric.label}</div><div class="v">${selectedMetric.value}</div></div>
-        <div class="stat"><div class="k">เงื่อนไขที่เลือก</div><div class="v" style="font-size:16px">${status}/${gender}${range === 'custom' && fromDateStr && toDateStr ? ` (${fromDateStr} ถึง ${toDateStr})` : ''}</div></div>
+        <div class="stat"><div class="k">à¹€à¸‡à¸·à¹ˆà¸­à¸™à¹„à¸‚à¸—à¸µà¹ˆà¹€à¸¥à¸·à¸­à¸</div><div class="v" style="font-size:16px">${status}/${gender}${range === 'custom' && fromDateStr && toDateStr ? ` (${fromDateStr} à¸–à¸¶à¸‡ ${toDateStr})` : ''}</div></div>
       </div>
 
       <section class="stat" style="margin-bottom:12px;">
-        <div class="k" style="margin-bottom:8px">กราฟจำนวนสมาชิกตามช่วงเวลา</div>
+        <div class="k" style="margin-bottom:8px">à¸à¸£à¸²à¸Ÿà¸ˆà¸³à¸™à¸§à¸™à¸ªà¸¡à¸²à¸Šà¸´à¸à¸•à¸²à¸¡à¸Šà¹ˆà¸§à¸‡à¹€à¸§à¸¥à¸²</div>
         <div style="display:flex;align-items:flex-end;gap:10px;overflow:auto;padding:8px 2px 2px;min-height:190px;">${bars}</div>
       </section>
 
       <div class="grid" style="grid-template-columns: 1.2fr 1fr; gap:12px; align-items:start;">
         <section class="stat" style="padding:0;overflow:hidden;">
-          <div style="padding:12px 12px 0"><strong>สมาชิกล่าสุด (ตาม filter)</strong></div>
+          <div style="padding:12px 12px 0"><strong>à¸ªà¸¡à¸²à¸Šà¸´à¸à¸¥à¹ˆà¸²à¸ªà¸¸à¸” (à¸•à¸²à¸¡ filter)</strong></div>
           <div style="overflow:auto; padding:8px 12px 12px;">
             <table>
-              <thead><tr><th>ID</th><th>ชื่อ</th><th>เพศ</th><th>สถานะ</th><th>วันที่สมัคร</th></tr></thead>
-              <tbody>${latestMembers || '<tr><td colspan="5">ยังไม่มีข้อมูล</td></tr>'}</tbody>
+              <thead><tr><th>ID</th><th>à¸Šà¸·à¹ˆà¸­</th><th>à¹€à¸žà¸¨</th><th>à¸ªà¸–à¸²à¸™à¸°</th><th>à¸§à¸±à¸™à¸—à¸µà¹ˆà¸ªà¸¡à¸±à¸„à¸£</th></tr></thead>
+              <tbody>${latestMembers || '<tr><td colspan="5">à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸‚à¹‰à¸­à¸¡à¸¹à¸¥</td></tr>'}</tbody>
             </table>
           </div>
         </section>
 
         <section class="stat" style="padding:0;overflow:hidden;">
-          <div style="padding:12px 12px 0"><strong>กิจกรรมล่าสุด (Audit)</strong></div>
+          <div style="padding:12px 12px 0"><strong>à¸à¸´à¸ˆà¸à¸£à¸£à¸¡à¸¥à¹ˆà¸²à¸ªà¸¸à¸” (Audit)</strong></div>
           <div style="overflow:auto; padding:8px 12px 12px;">
             <table>
-              <thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>เหตุการณ์</th><th>รายละเอียด</th></tr></thead>
-              <tbody>${recentLogs || '<tr><td colspan="4">ยังไม่มีประวัติ</td></tr>'}</tbody>
+              <thead><tr><th>à¹€à¸§à¸¥à¸²</th><th>à¸œà¸¹à¹‰à¹ƒà¸Šà¹‰</th><th>à¹€à¸«à¸•à¸¸à¸à¸²à¸£à¸“à¹Œ</th><th>à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸”</th></tr></thead>
+              <tbody>${recentLogs || '<tr><td colspan="4">à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸›à¸£à¸°à¸§à¸±à¸•à¸´</td></tr>'}</tbody>
             </table>
           </div>
         </section>
@@ -827,18 +667,18 @@ function renderMembersPage(session, queryParams) {
         <form method="POST" action="/admin/members/${m.id}/update" style="display:grid;gap:6px">
           <input name="name" value="${m.name}" ${canEdit ? '' : 'disabled'} />
           <input name="email" value="${m.email}" ${canEdit ? '' : 'disabled'} />
-          <button class="btn" type="submit" ${canEdit ? '' : 'disabled'}>บันทึก</button>
+          <button class="btn" type="submit" ${canEdit ? '' : 'disabled'}>à¸šà¸±à¸™à¸—à¸¶à¸</button>
         </form>
       </td>
       <td>${m.createdAt.toLocaleDateString('th-TH')}</td>
-      <td>${m.status === 'blocked' ? 'บล็อก' : 'ปกติ'}</td>
+      <td>${m.status === 'blocked' ? 'à¸šà¸¥à¹‡à¸­à¸' : 'à¸›à¸à¸•à¸´'}</td>
       <td>
         <div class="actions">
           <form method="POST" action="/admin/members/${m.id}/toggle-block">
-            <button class="btn" type="submit" ${canBlock ? '' : 'disabled'}>${m.status === 'blocked' ? 'ปลดบล็อก' : 'บล็อก'}</button>
+            <button class="btn" type="submit" ${canBlock ? '' : 'disabled'}>${m.status === 'blocked' ? 'à¸›à¸¥à¸”à¸šà¸¥à¹‡à¸­à¸' : 'à¸šà¸¥à¹‡à¸­à¸'}</button>
           </form>
-          <form method="POST" action="/admin/members/${m.id}/delete" onsubmit="return confirm('ยืนยันลบสมาชิก?')">
-            <button class="btn" type="submit" style="color:#dc2626;border-color:#fecaca" ${canDelete ? '' : 'disabled'}>ลบ</button>
+          <form method="POST" action="/admin/members/${m.id}/delete" onsubmit="return confirm('à¸¢à¸·à¸™à¸¢à¸±à¸™à¸¥à¸šà¸ªà¸¡à¸²à¸Šà¸´à¸?')">
+            <button class="btn" type="submit" style="color:#dc2626;border-color:#fecaca" ${canDelete ? '' : 'disabled'}>à¸¥à¸š</button>
           </form>
         </div>
       </td>
@@ -849,41 +689,41 @@ function renderMembersPage(session, queryParams) {
     <main class="card">
       <div class="head">
         <div class="topline">
-          <h2 style="margin:0">รายชื่อสมาชิกทั้งหมด</h2>
-          <span class="pill">ผลลัพธ์ ${filtered.length} / ${members.length}</span>
+          <h2 style="margin:0">à¸£à¸²à¸¢à¸Šà¸·à¹ˆà¸­à¸ªà¸¡à¸²à¸Šà¸´à¸à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”</h2>
+          <span class="pill">à¸œà¸¥à¸¥à¸±à¸žà¸˜à¹Œ ${filtered.length} / ${members.length}</span>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <a class="btn" href="/admin/dashboard">กลับแดชบอร์ด</a>
+          <a class="btn" href="/admin/dashboard">à¸à¸¥à¸±à¸šà¹à¸”à¸Šà¸šà¸­à¸£à¹Œà¸”</a>
           <a class="btn" href="/admin/audit">Audit Log</a>
-          <a class="btn" href="/admin/logout">ออกจากระบบ</a>
+          <a class="btn" href="/admin/logout">à¸­à¸­à¸à¸ˆà¸²à¸à¸£à¸°à¸šà¸š</a>
         </div>
       </div>
 
       <form method="GET" action="/admin/members" class="filters" style="margin-bottom:12px">
         <div>
-          <label class="muted">ค้นหา (ชื่อ/อีเมล/ID)</label>
-          <input name="q" value="${q}" placeholder="เช่น nina หรือ U001" />
+          <label class="muted">à¸„à¹‰à¸™à¸«à¸² (à¸Šà¸·à¹ˆà¸­/à¸­à¸µà¹€à¸¡à¸¥/ID)</label>
+          <input name="q" value="${q}" placeholder="à¹€à¸Šà¹ˆà¸™ nina à¸«à¸£à¸·à¸­ U001" />
         </div>
         <div>
-          <label class="muted">สถานะ</label>
+          <label class="muted">à¸ªà¸–à¸²à¸™à¸°</label>
           <select name="status">
-            <option value="all" ${status === 'all' ? 'selected' : ''}>ทั้งหมด</option>
-            <option value="active" ${status === 'active' ? 'selected' : ''}>ปกติ</option>
-            <option value="blocked" ${status === 'blocked' ? 'selected' : ''}>บล็อก</option>
+            <option value="all" ${status === 'all' ? 'selected' : ''}>à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”</option>
+            <option value="active" ${status === 'active' ? 'selected' : ''}>à¸›à¸à¸•à¸´</option>
+            <option value="blocked" ${status === 'blocked' ? 'selected' : ''}>à¸šà¸¥à¹‡à¸­à¸</option>
           </select>
         </div>
-        <button class="btn btn-primary" type="submit">ค้นหา/กรอง</button>
+        <button class="btn btn-primary" type="submit">à¸„à¹‰à¸™à¸«à¸²/à¸à¸£à¸­à¸‡</button>
       </form>
 
       <div style="overflow:auto">
         <table>
           <thead>
-            <tr><th>ID</th><th>ข้อมูลสมาชิก (แก้ไขได้)</th><th>วันที่สมัคร</th><th>สถานะ</th><th>จัดการ</th></tr>
+            <tr><th>ID</th><th>à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸ªà¸¡à¸²à¸Šà¸´à¸ (à¹à¸à¹‰à¹„à¸‚à¹„à¸”à¹‰)</th><th>à¸§à¸±à¸™à¸—à¸µà¹ˆà¸ªà¸¡à¸±à¸„à¸£</th><th>à¸ªà¸–à¸²à¸™à¸°</th><th>à¸ˆà¸±à¸”à¸à¸²à¸£</th></tr>
           </thead>
-          <tbody>${rows || '<tr><td colspan="5">ไม่พบข้อมูลสมาชิกตามเงื่อนไข</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="5">à¹„à¸¡à¹ˆà¸žà¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸ªà¸¡à¸²à¸Šà¸´à¸à¸•à¸²à¸¡à¹€à¸‡à¸·à¹ˆà¸­à¸™à¹„à¸‚</td></tr>'}</tbody>
         </table>
       </div>
-      <p class="muted" style="margin-top:8px">สิทธิ์ปัจจุบัน: ${session.role} | staff=ดูอย่างเดียว, admin=แก้ไข/บล็อก, super_admin=ลบได้</p>
+      <p class="muted" style="margin-top:8px">à¸ªà¸´à¸—à¸˜à¸´à¹Œà¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™: ${session.role} | staff=à¸”à¸¹à¸­à¸¢à¹ˆà¸²à¸‡à¹€à¸”à¸µà¸¢à¸§, admin=à¹à¸à¹‰à¹„à¸‚/à¸šà¸¥à¹‡à¸­à¸, super_admin=à¸¥à¸šà¹„à¸”à¹‰</p>
     </main>
   `));
 }
@@ -902,16 +742,16 @@ function renderAuditPage(session) {
       <div class="head">
         <h2 style="margin:0">Audit Log</h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <a class="btn" href="/admin/dashboard">กลับแดชบอร์ด</a>
-          <a class="btn" href="/admin/members">จัดการสมาชิก</a>
+          <a class="btn" href="/admin/dashboard">à¸à¸¥à¸±à¸šà¹à¸”à¸Šà¸šà¸­à¸£à¹Œà¸”</a>
+          <a class="btn" href="/admin/members">à¸ˆà¸±à¸”à¸à¸²à¸£à¸ªà¸¡à¸²à¸Šà¸´à¸</a>
         </div>
       </div>
 
       <div style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;background:#fff">
         <div class="log-row" style="font-weight:700;background:#f8fafc">
-          <div>เวลา</div><div>ผู้ใช้งาน</div><div>เหตุการณ์</div>
+          <div>à¹€à¸§à¸¥à¸²</div><div>à¸œà¸¹à¹‰à¹ƒà¸Šà¹‰à¸‡à¸²à¸™</div><div>à¹€à¸«à¸•à¸¸à¸à¸²à¸£à¸“à¹Œ</div>
         </div>
-        ${rows || '<div class="log-row"><div>-</div><div>-</div><div>ยังไม่มีประวัติ</div></div>'}
+        ${rows || '<div class="log-row"><div>-</div><div>-</div><div>à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸›à¸£à¸°à¸§à¸±à¸•à¸´</div></div>'}
       </div>
     </main>
   `));
@@ -921,10 +761,10 @@ function renderRevenuePage(session) {
   return htmlPage('Revenue - Admin', adminShell(session, 'revenue', `
     <main class="card">
       <div class="head">
-        <h2 style="margin:0">รายได้</h2>
-        <a class="btn" href="/admin/dashboard">กลับภาพรวม</a>
+        <h2 style="margin:0">à¸£à¸²à¸¢à¹„à¸”à¹‰</h2>
+        <a class="btn" href="/admin/dashboard">à¸à¸¥à¸±à¸šà¸ à¸²à¸žà¸£à¸§à¸¡</a>
       </div>
-      <p>หน้านี้เป็นโครงสำหรับระบบรายได้ (Revenue) พร้อมต่อยอดเชื่อม Payment/รายงานจริง</p>
+      <p>à¸«à¸™à¹‰à¸²à¸™à¸µà¹‰à¹€à¸›à¹‡à¸™à¹‚à¸„à¸£à¸‡à¸ªà¸³à¸«à¸£à¸±à¸šà¸£à¸°à¸šà¸šà¸£à¸²à¸¢à¹„à¸”à¹‰ (Revenue) à¸žà¸£à¹‰à¸­à¸¡à¸•à¹ˆà¸­à¸¢à¸­à¸”à¹€à¸Šà¸·à¹ˆà¸­à¸¡ Payment/à¸£à¸²à¸¢à¸‡à¸²à¸™à¸ˆà¸£à¸´à¸‡</p>
     </main>
   `));
 }
@@ -933,10 +773,10 @@ function renderPromotionsPage(session) {
   return htmlPage('Promotions - Admin', adminShell(session, 'promotions', `
     <main class="card">
       <div class="head">
-        <h2 style="margin:0">โปรโมชั่น</h2>
-        <a class="btn" href="/admin/dashboard">กลับภาพรวม</a>
+        <h2 style="margin:0">à¹‚à¸›à¸£à¹‚à¸¡à¸Šà¸±à¹ˆà¸™</h2>
+        <a class="btn" href="/admin/dashboard">à¸à¸¥à¸±à¸šà¸ à¸²à¸žà¸£à¸§à¸¡</a>
       </div>
-      <p>หน้านี้เป็นโครงสำหรับจัดการโปรโมชั่น เช่น คูปอง แคมเปญ และส่วนลด</p>
+      <p>à¸«à¸™à¹‰à¸²à¸™à¸µà¹‰à¹€à¸›à¹‡à¸™à¹‚à¸„à¸£à¸‡à¸ªà¸³à¸«à¸£à¸±à¸šà¸ˆà¸±à¸”à¸à¸²à¸£à¹‚à¸›à¸£à¹‚à¸¡à¸Šà¸±à¹ˆà¸™ à¹€à¸Šà¹ˆà¸™ à¸„à¸¹à¸›à¸­à¸‡ à¹à¸„à¸¡à¹€à¸›à¸ à¹à¸¥à¸°à¸ªà¹ˆà¸§à¸™à¸¥à¸”</p>
     </main>
   `));
 }
@@ -945,10 +785,10 @@ function renderActivitiesPage(session) {
   return htmlPage('Activities - Admin', adminShell(session, 'activities', `
     <main class="card">
       <div class="head">
-        <h2 style="margin:0">กิจกรรม</h2>
-        <a class="btn" href="/admin/audit">เปิด Audit Log</a>
+        <h2 style="margin:0">à¸à¸´à¸ˆà¸à¸£à¸£à¸¡</h2>
+        <a class="btn" href="/admin/audit">à¹€à¸›à¸´à¸” Audit Log</a>
       </div>
-      <p>หน้านี้เป็นโครงกิจกรรมระบบ/ผู้ใช้งาน สามารถต่อยอด Timeline หรือ Event Monitor ได้</p>
+      <p>à¸«à¸™à¹‰à¸²à¸™à¸µà¹‰à¹€à¸›à¹‡à¸™à¹‚à¸„à¸£à¸‡à¸à¸´à¸ˆà¸à¸£à¸£à¸¡à¸£à¸°à¸šà¸š/à¸œà¸¹à¹‰à¹ƒà¸Šà¹‰à¸‡à¸²à¸™ à¸ªà¸²à¸¡à¸²à¸£à¸–à¸•à¹ˆà¸­à¸¢à¸­à¸” Timeline à¸«à¸£à¸·à¸­ Event Monitor à¹„à¸”à¹‰</p>
     </main>
   `));
 }
@@ -996,13 +836,13 @@ const server = http.createServer(async (req, res) => {
 
     if (body.username === 'user' && body.password === '123456') {
       const sid = crypto.randomBytes(24).toString('hex');
-      userSessions.set(sid, { username: body.username, displayName: 'พล' });
+      userSessions.set(sid, { username: body.username, displayName: 'à¸žà¸¥' });
       redirect(res, '/app', `user_sid=${sid}; HttpOnly; Path=/; SameSite=Lax; Max-Age=28800`);
       return;
     }
 
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(renderUserLogin('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'));
+    res.end(renderUserLogin('à¸Šà¸·à¹ˆà¸­à¸œà¸¹à¹‰à¹ƒà¸Šà¹‰à¸«à¸£à¸·à¸­à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹„à¸¡à¹ˆà¸–à¸¹à¸à¸•à¹‰à¸­à¸‡'));
     return;
   }
 
@@ -1017,9 +857,9 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(htmlPage('SodeClick V2', `
         <main class="card">
-          <h2 style="margin-top:0">หน้าหลักผู้ใช้</h2>
-          <p class="muted">เกิดข้อผิดพลาดชั่วคราวในหน้าแอป ระบบสลับเป็นโหมดสำรองให้ใช้งานได้ก่อน</p>
-          <p><a class="btn btn-primary" href="/login">กลับหน้า Login</a></p>
+          <h2 style="margin-top:0">à¸«à¸™à¹‰à¸²à¸«à¸¥à¸±à¸à¸œà¸¹à¹‰à¹ƒà¸Šà¹‰</h2>
+          <p class="muted">à¹€à¸à¸´à¸”à¸‚à¹‰à¸­à¸œà¸´à¸”à¸žà¸¥à¸²à¸”à¸Šà¸±à¹ˆà¸§à¸„à¸£à¸²à¸§à¹ƒà¸™à¸«à¸™à¹‰à¸²à¹à¸­à¸› à¸£à¸°à¸šà¸šà¸ªà¸¥à¸±à¸šà¹€à¸›à¹‡à¸™à¹‚à¸«à¸¡à¸”à¸ªà¸³à¸£à¸­à¸‡à¹ƒà¸«à¹‰à¹ƒà¸Šà¹‰à¸‡à¸²à¸™à¹„à¸”à¹‰à¸à¹ˆà¸­à¸™</p>
+          <p><a class="btn btn-primary" href="/login">à¸à¸¥à¸±à¸šà¸«à¸™à¹‰à¸² Login</a></p>
         </main>
       `));
     }
@@ -1166,3 +1006,4 @@ const server = http.createServer(async (req, res) => {
 server.listen(port, () => {
   console.log(`SodeClick V2 listening on ${port}`);
 });
+
