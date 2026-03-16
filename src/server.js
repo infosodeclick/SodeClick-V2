@@ -32,6 +32,8 @@ const membershipPlans = [
 
 const shopOrders = [];
 const earningsLedger = [];
+const registeredUsers = new Map();
+const pendingVerifications = new Map();
 
 const dataDir = path.join(__dirname, '..', 'data');
 const stateFile = path.join(dataDir, 'app-state.json');
@@ -46,6 +48,8 @@ function saveAppState() {
     userProfiles: Array.from(userProfiles.entries()),
     shopOrders,
     earningsLedger,
+    registeredUsers: Array.from(registeredUsers.entries()),
+    pendingVerifications: Array.from(pendingVerifications.entries()),
     updatedAt: new Date().toISOString(),
   };
   fs.writeFileSync(stateFile, JSON.stringify(payload, null, 2), 'utf8');
@@ -76,6 +80,14 @@ function loadAppState() {
         if (x && x.at) x.at = new Date(x.at);
         earningsLedger.push(x);
       });
+    }
+
+    if (Array.isArray(parsed.registeredUsers)) {
+      for (const [k, v] of parsed.registeredUsers) registeredUsers.set(k, v);
+    }
+
+    if (Array.isArray(parsed.pendingVerifications)) {
+      for (const [k, v] of parsed.pendingVerifications) pendingVerifications.set(k, v);
     }
   } catch (err) {
     console.error('[state-load-error]', err.message);
@@ -441,6 +453,57 @@ function renderUserLogin(error = '') {
         <button class="btn btn-primary" style="width:100%;margin-top:12px" type="submit">เข้าสู่ระบบ</button>
       </form>
       <p class="muted">บัญชีตัวอย่างเดโม: user / 123456 และ admin / 123456</p>
+      <p class="muted">ยังไม่มีบัญชี? <a href="/register">สมัครสมาชิก</a></p>
+    </div>
+  `);
+}
+
+function createUserId() {
+  return `USR${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+}
+
+function renderRegisterPage(error = '', info = '') {
+  return htmlPage('สมัครสมาชิก - SodeClick V2', `
+    <div class="login">
+      <h2 style="margin-top:0">สมัครสมาชิก</h2>
+      ${error ? `<p style="color:#dc2626;font-weight:700">${error}</p>` : ''}
+      ${info ? `<p style="color:#166534;font-weight:700">${info}</p>` : ''}
+      <form method="POST" action="/register">
+        <label>Username</label>
+        <input name="username" required />
+        <label style="margin-top:8px;display:block">Email</label>
+        <input name="email" type="email" required />
+        <label style="margin-top:8px;display:block">Password</label>
+        <input name="password" type="password" required />
+        <label style="margin-top:8px;display:block">Gender</label>
+        <select name="gender"><option value="male">male</option><option value="female">female</option><option value="other">other</option></select>
+        <label style="margin-top:8px;display:block">Age</label>
+        <input name="age" type="number" min="18" max="99" required />
+        <label style="margin-top:8px;display:block">Province</label>
+        <input name="province" required />
+        <label style="margin-top:8px;display:block">Looking For</label>
+        <select name="lookingFor"><option value="male">male</option><option value="female">female</option><option value="all">all</option></select>
+        <button class="btn btn-primary" style="width:100%;margin-top:12px" type="submit">สมัครสมาชิก</button>
+      </form>
+      <p class="muted">มีบัญชีแล้ว? <a href="/login">เข้าสู่ระบบ</a></p>
+    </div>
+  `);
+}
+
+function renderVerifyPage(email = '', error = '', info = '') {
+  return htmlPage('ยืนยันตัวตน - SodeClick V2', `
+    <div class="login">
+      <h2 style="margin-top:0">ยืนยันอีเมล</h2>
+      ${error ? `<p style="color:#dc2626;font-weight:700">${error}</p>` : ''}
+      ${info ? `<p style="color:#166534;font-weight:700">${info}</p>` : ''}
+      <form method="POST" action="/verify">
+        <label>Email</label>
+        <input name="email" type="email" value="${email}" required />
+        <label style="margin-top:8px;display:block">OTP</label>
+        <input name="otp" required />
+        <button class="btn btn-primary" style="width:100%;margin-top:12px" type="submit">ยืนยัน OTP</button>
+      </form>
+      <p class="muted">ตัวอย่างเดโม: ใช้ OTP ตามที่ระบบแสดงหลังสมัคร</p>
     </div>
   `);
 }
@@ -1351,6 +1414,83 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (path === '/register' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderRegisterPage());
+    return;
+  }
+
+  if (path === '/register' && req.method === 'POST') {
+    const body = await parseBody(req);
+    const username = (body.username || '').trim();
+    const email = (body.email || '').trim().toLowerCase();
+    const password = (body.password || '').trim();
+
+    if (!username || !email || !password) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderRegisterPage('กรอกข้อมูลไม่ครบ'));
+      return;
+    }
+
+    if (registeredUsers.has(email)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderRegisterPage('อีเมลนี้ถูกใช้งานแล้ว'));
+      return;
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    pendingVerifications.set(email, {
+      userId: createUserId(), username, email, password,
+      gender: body.gender || 'other', age: Number(body.age || 18), province: body.province || '', lookingFor: body.lookingFor || 'all',
+      otp, createdAt: Date.now(),
+    });
+    saveAppState();
+
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderVerifyPage(email, '', `OTP สำหรับเดโม: ${otp}`));
+    return;
+  }
+
+  if (path === '/verify' && req.method === 'GET') {
+    const email = (url.searchParams.get('email') || '').trim().toLowerCase();
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderVerifyPage(email));
+    return;
+  }
+
+  if (path === '/verify' && req.method === 'POST') {
+    const body = await parseBody(req);
+    const email = (body.email || '').trim().toLowerCase();
+    const otp = (body.otp || '').trim();
+    const pending = pendingVerifications.get(email);
+
+    if (!pending || pending.otp !== otp) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderVerifyPage(email, 'OTP ไม่ถูกต้อง'));
+      return;
+    }
+
+    registeredUsers.set(email, {
+      userId: pending.userId,
+      username: pending.username,
+      displayName: pending.username,
+      email: pending.email,
+      password: pending.password,
+      gender: pending.gender,
+      age: pending.age,
+      location: pending.province,
+      lookingFor: pending.lookingFor,
+      verified: true,
+      createdAt: Date.now(),
+    });
+    pendingVerifications.delete(email);
+    saveAppState();
+
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderUserLogin('สมัครสมาชิกสำเร็จ กรุณาเข้าสู่ระบบ'));
+    return;
+  }
+
   if (path === '/login' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(renderUserLogin());
@@ -1366,6 +1506,16 @@ const server = http.createServer(async (req, res) => {
       sessions.set(sid, { username: foundAdmin.username, role: foundAdmin.role, displayName: foundAdmin.displayName, createdAt: Date.now() });
       addAudit('login', foundAdmin.username, `role=${foundAdmin.role}`);
       redirect(res, '/admin/dashboard', `sid=${sid}; HttpOnly; Path=/; SameSite=Lax; Max-Age=28800`);
+      return;
+    }
+
+    const byEmail = registeredUsers.get((body.username || '').trim().toLowerCase());
+    const byUsername = Array.from(registeredUsers.values()).find((u) => u.username === body.username);
+    const foundUser = byEmail || byUsername;
+    if (foundUser && foundUser.password === body.password) {
+      const sid = crypto.randomBytes(24).toString('hex');
+      userSessions.set(sid, { username: foundUser.username, displayName: foundUser.displayName, userId: foundUser.userId });
+      redirect(res, '/app', `user_sid=${sid}; HttpOnly; Path=/; SameSite=Lax; Max-Age=28800`);
       return;
     }
 
