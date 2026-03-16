@@ -319,196 +319,249 @@ function renderUserLogin(error = '') {
 }
 
 function renderUserApp(session) {
-  return `<!doctype html>
-<html lang="th">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>หน้าบ้าน - SodeClick V2</title>
-  <style>
-    * { box-sizing:border-box; }
-    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:#f3f4f6; color:#111827; }
-    .topbar { height:56px; background:#3b82f6; color:#fff; display:flex; align-items:center; padding:0 14px; gap:16px; }
-    .brand { font-weight:800; }
-    .top-menu { display:flex; gap:18px; font-weight:600; font-size:14px; opacity:.95; }
-    .shell { display:grid; grid-template-columns: 220px 1fr 250px; min-height: calc(100vh - 56px); }
-    .left { background:#fff; border-right:1px solid #e5e7eb; padding:14px; }
-    .left a { display:block; padding:10px 8px; border-radius:8px; text-decoration:none; color:#374151; font-weight:600; }
-    .left a:hover { background:#f3f4f6; }
-    .center { padding:14px; }
-    .board { background:#fff; border:1px solid #e5e7eb; border-radius:14px; overflow:hidden; }
-    .toolbar { padding:10px; border-bottom:1px solid #e5e7eb; display:flex; gap:8px; align-items:center; }
-    .tool { border:1px solid #d1d5db; background:#fff; border-radius:8px; padding:8px 10px; font-size:14px; cursor:pointer; }
-    .composer { padding:10px; border-bottom:1px solid #e5e7eb; display:grid; gap:8px; }
-    .composer textarea { width:100%; border:1px solid #d1d5db; border-radius:10px; padding:10px; min-height:72px; font-family:inherit; }
-    .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:flex-end; }
-    .btn { border:1px solid #cbd5e1; background:#fff; border-radius:10px; padding:8px 12px; font-weight:700; cursor:pointer; }
-    .btn-primary { background:linear-gradient(135deg,#60a5fa,#f9a8d4); color:#fff; border:0; }
-    .feed { padding:8px 10px 14px; display:grid; gap:10px; }
-    .post { border:1px solid #e5e7eb; border-radius:10px; padding:10px; background:#fff; }
-    .post-head { display:flex; gap:10px; align-items:center; margin-bottom:6px; }
-    .avatar-sm { width:40px; height:40px; border-radius:999px; background:linear-gradient(135deg,#bfdbfe,#fbcfe8); }
-    .u { font-weight:700; }
-    .t { font-size:12px; color:#6b7280; }
-    .msg { margin:6px 0; font-size:16px; white-space:pre-wrap; }
-    .msg img { margin-top:8px; max-width:100%; border-radius:8px; border:1px solid #e5e7eb; }
-    .post-actions { color:#6b7280; font-size:13px; margin-bottom:6px; display:flex; gap:12px; }
-    .reply { width:100%; border:1px solid #dbeafe; border-radius:8px; padding:8px; }
-    .replies { margin-top:8px; display:grid; gap:6px; }
-    .reply-item { background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px; padding:7px 8px; font-size:14px; }
-    .right { background:#fff; border-left:1px solid #e5e7eb; padding:14px; }
-    .profile-card { border:1px solid #e5e7eb; border-radius:10px; padding:12px; background:#f8fafc; }
-    .hidden { display:none; }
-    @media (max-width: 980px) { .shell { grid-template-columns: 1fr; } .left,.right { border:0; } }
-  </style>
-</head>
-<body>
-  <header class="topbar">
-    <div class="brand">SodeClick</div>
-    <nav class="top-menu">
-      <span>กระดาน</span><span>ออนไลน์</span><span>ดีเจ</span><span>ซุปตาร์</span><span>เกมส์</span>
-    </nav>
-    <div style="margin-left:auto"><a href="/logout" style="color:#fff;text-decoration:none;font-weight:700">ออกจากระบบ</a></div>
-  </header>
+  return htmlPage('หน้าบ้าน - SodeClick V2', `
+    <style>
+      .social-wrap { display:grid; gap:12px; }
+      .composer-box { border:1px solid #e5e7eb; border-radius:12px; background:#fff; overflow:hidden; }
+      .composer-head { padding:10px 12px; border-bottom:1px solid #eef2f7; color:#64748b; font-weight:700; }
+      .composer-body { padding:10px 12px; }
+      .composer-input { width:100%; min-height:92px; border:1px solid #d1d5db; border-radius:10px; padding:10px; resize:vertical; font-family:inherit; }
+      .composer-actions { display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:10px; }
+      .tool-row { display:flex; flex-wrap:wrap; gap:8px; }
+      .icon-btn { border:1px solid #dbe3f0; border-radius:10px; background:#fff; padding:7px 10px; cursor:pointer; }
+      .send-btn { padding:8px 14px; border:0; border-radius:10px; font-weight:700; color:#fff; background:linear-gradient(135deg,#60a5fa,#f9a8d4); cursor:pointer; }
+      .feed-list { display:grid; gap:10px; }
+      .post-card { border:1px solid #e5e7eb; border-radius:12px; background:#fff; padding:12px; }
+      .post-top { display:flex; justify-content:space-between; gap:10px; align-items:center; }
+      .post-user { font-weight:800; }
+      .post-time { color:#64748b; font-size:12px; }
+      .post-text { margin-top:8px; white-space:pre-wrap; }
+      .post-image { margin-top:8px; max-width:100%; border-radius:10px; border:1px solid #e5e7eb; }
+      .post-bar { margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+      .small-btn { border:1px solid #dbe3f0; border-radius:8px; background:#fff; padding:6px 10px; cursor:pointer; }
+      .reply-row { margin-top:8px; display:flex; gap:8px; }
+      .reply-input { flex:1; border:1px solid #d1d5db; border-radius:8px; padding:8px; }
+      .reply-list { margin-top:8px; display:grid; gap:6px; }
+      .reply-item { border:1px solid #e5e7eb; border-radius:8px; background:#f8fafc; padding:7px 8px; font-size:14px; }
+      .empty-feed { border:1px dashed #cbd5e1; border-radius:12px; background:#fff; padding:16px; color:#64748b; text-align:center; }
+      .hidden { display:none; }
+    </style>
 
-  <main class="shell">
-    <aside class="left">
-      <a href="#">หน้าหลัก</a>
-      <a href="#">กระดานโต้ตอบ</a>
-      <a href="#">ห้องแชท</a>
-      <a href="#">เพื่อนออนไลน์</a>
-      <a href="#">โปรไฟล์ฉัน</a>
-    </aside>
+    <main class="card social-wrap">
+      <div class="head">
+        <h2 style="margin:0">กระดานโต้ตอบ</h2>
+        <a class="btn" href="/logout">ออกจากระบบ</a>
+      </div>
 
-    <section class="center">
-      <div class="board">
-        <div class="toolbar">
-          <button class="tool emoji-insert" data-emoji="😊">😊</button>
-          <button class="tool emoji-insert" data-emoji="❤️">❤️</button>
-          <button class="tool emoji-insert" data-emoji="😂">😂</button>
-          <button class="tool">ออโต้ ▾</button>
-        </div>
-        <div class="composer">
-          <textarea id="postText" placeholder="โพสต์อะไรดีวันนี้..."></textarea>
-          <div class="row">
-            <button class="btn btn-primary" id="postBtn">โพสต์</button>
+      <div class="composer-box">
+        <div class="composer-head">แสดงความคิดเห็นในชื่อ ${session.displayName || session.username}</div>
+        <div class="composer-body">
+          <textarea id="postInput" class="composer-input" placeholder="เขียนโพสต์หรือความคิดเห็น..."></textarea>
+          <div id="imagePreviewWrap" class="hidden" style="margin-top:8px"></div>
+          <div class="composer-actions">
+            <div class="tool-row">
+              <button type="button" class="icon-btn" id="pickImageBtn">📷 รูป</button>
+              <button type="button" class="icon-btn emoji-btn" data-emoji="😊">😊</button>
+              <button type="button" class="icon-btn emoji-btn" data-emoji="😂">😂</button>
+              <button type="button" class="icon-btn emoji-btn" data-emoji="❤️">❤️</button>
+              <button type="button" class="icon-btn emoji-btn" data-emoji="🔥">🔥</button>
+              <button type="button" class="icon-btn" id="gifBtn">GIF</button>
+              <button type="button" class="icon-btn" id="stickerBtn">Sticker</button>
+              <input id="imageInput" type="file" accept="image/*" class="hidden" />
+            </div>
+            <button type="button" class="send-btn" id="postBtn">โพสต์</button>
           </div>
         </div>
-        <div class="feed" id="feed"></div>
       </div>
-    </section>
 
-    <aside class="right">
-      <div class="profile-card">
-        <div style="font-weight:800">${session.displayName || session.username}</div>
-        <div style="color:#6b7280;font-size:13px">สถานะ: ออนไลน์</div>
-      </div>
-    </aside>
-  </main>
+      <div id="feed" class="feed-list"></div>
+      <div id="emptyFeed" class="empty-feed hidden">ยังไม่มีโพสต์ ลองโพสต์ข้อความแรกได้เลย</div>
+    </main>
 
-  <script>
-    const STORAGE_KEY = 'sodeclick_v2_posts';
-    const username = ${JSON.stringify(session.displayName || session.username)};
+    <script>
+      const STORAGE_KEY = 'sodeclick_v2_social_posts';
+      const currentUser = ${JSON.stringify(session.displayName || session.username)};
+      let pendingImage = null;
 
-    const defaultPosts = [
-      { id: Date.now()-3, user:'GN', text:'คิดถึงมากไหมคะ 😂', image:null, likes:1, replies:[], at: new Date().toISOString() },
-      { id: Date.now()-2, user:'นกฮูกปลดแอก', text:'เขาอาจจะคิดว่าพี่ขำหมดทุกคนก็ได้', image:null, likes:3, replies:['จริงเลย 😂'], at: new Date().toISOString() },
-    ];
-
-    let posts = [];
-
-    function loadPosts() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-        posts = Array.isArray(saved) && saved.length ? saved : defaultPosts;
-      } catch {
-        posts = defaultPosts;
+      function nowText(iso) {
+        try { return new Date(iso).toLocaleString('th-TH'); } catch (e) { return iso; }
       }
-      savePosts();
-    }
 
-    function savePosts() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
-    }
+      function getDefaultPosts() {
+        return [
+          { id: Date.now() - 2, user: 'GN', text: 'คิดถึงมากไหมคะ 😊', image: '', likes: 1, replies: [], createdAt: new Date().toISOString() },
+          { id: Date.now() - 1, user: 'นกฮูกปลดแอก', text: 'เขาอาจจะคิดว่าพี่ขำหมดทุกคนก็ได้ 😂', image: '', likes: 3, replies: ['เห็นด้วยเลย'], createdAt: new Date().toISOString() }
+        ];
+      }
 
-    function renderFeed() {
-      const feed = document.getElementById('feed');
-      feed.innerHTML = posts.map((p, idx) => {
-        const replies = (p.replies || []).map((r) => '<div class="reply-item">' + r + '</div>').join('');
-        const img = p.image ? '<img src="' + p.image + '" alt="post-image" />' : '';
-        return '' +
-          '<article class="post">' +
-            '<div class="post-head">' +
-              '<div class="avatar-sm"></div>' +
-              '<div>' +
-                '<div class="u">' + p.user + '</div>' +
-                '<div class="t">' + new Date(p.at).toLocaleString('th-TH') + '</div>' +
-              '</div>' +
-            '</div>' +
-            '<div class="msg">' + (p.text || '') + img + '</div>' +
-            '<div class="post-actions">' +
-              '<button class="btn" onclick="likePost(' + idx + ')">👍 Like (' + (p.likes || 0) + ')</button>' +
-            '</div>' +
-            '<input class="reply" id="reply-' + idx + '" placeholder="เขียนตอบกลับ..." />' +
-            '<div class="row" style="margin-top:6px"><button class="btn" onclick="replyPost(' + idx + ')">ตอบกลับ</button></div>' +
-            '<div class="replies">' + replies + '</div>' +
-          '</article>';
-      }).join('');
-    }
+      function loadPosts() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          const arr = raw ? JSON.parse(raw) : [];
+          if (Array.isArray(arr) && arr.length) return arr;
+        } catch (e) {}
+        return getDefaultPosts();
+      }
 
-    function likePost(i) {
-      posts[i].likes = (posts[i].likes || 0) + 1;
-      savePosts();
-      renderFeed();
-    }
+      function savePosts(posts) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+      }
 
-    function replyPost(i) {
-      const input = document.getElementById('reply-' + i);
-      const val = (input.value || '').trim();
-      if (!val) return;
-      posts[i].replies = posts[i].replies || [];
-      posts[i].replies.push(username + ': ' + val);
-      input.value = '';
-      savePosts();
-      renderFeed();
-    }
+      function esc(text) {
+        return String(text || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
 
+      let posts = loadPosts();
 
+      function renderFeed() {
+        const feed = document.getElementById('feed');
+        const empty = document.getElementById('emptyFeed');
+        if (!posts.length) {
+          feed.innerHTML = '';
+          empty.classList.remove('hidden');
+          return;
+        }
+        empty.classList.add('hidden');
 
-    document.querySelectorAll('.emoji-insert').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const ta = document.getElementById('postText');
-        ta.value += btn.dataset.emoji;
+        let html = '';
+        for (let i = 0; i < posts.length; i += 1) {
+          const p = posts[i];
+          let replyHtml = '';
+          const replies = Array.isArray(p.replies) ? p.replies : [];
+          for (let j = 0; j < replies.length; j += 1) {
+            replyHtml += '<div class="reply-item">' + esc(replies[j]) + '</div>';
+          }
+
+          const imageHtml = p.image ? ('<img class="post-image" src="' + p.image + '" alt="post-image" />') : '';
+
+          html += ''
+            + '<article class="post-card">'
+            + '  <div class="post-top">'
+            + '    <div>'
+            + '      <div class="post-user">' + esc(p.user) + '</div>'
+            + '      <div class="post-time">' + nowText(p.createdAt) + '</div>'
+            + '    </div>'
+            + '  </div>'
+            + '  <div class="post-text">' + esc(p.text) + '</div>'
+            + imageHtml
+            + '  <div class="post-bar">'
+            + '    <button type="button" class="small-btn" data-like="' + i + '">👍 Like (' + (p.likes || 0) + ')</button>'
+            + '  </div>'
+            + '  <div class="reply-row">'
+            + '    <input class="reply-input" id="reply-' + i + '" placeholder="เขียนตอบกลับ..." />'
+            + '    <button type="button" class="small-btn" data-reply="' + i + '">ตอบกลับ</button>'
+            + '  </div>'
+            + '  <div class="reply-list">' + replyHtml + '</div>'
+            + '</article>';
+        }
+
+        feed.innerHTML = html;
+
+        const likeButtons = document.querySelectorAll('[data-like]');
+        for (let i = 0; i < likeButtons.length; i += 1) {
+          likeButtons[i].addEventListener('click', function () {
+            const idx = Number(this.getAttribute('data-like'));
+            if (Number.isNaN(idx) || !posts[idx]) return;
+            posts[idx].likes = (posts[idx].likes || 0) + 1;
+            savePosts(posts);
+            renderFeed();
+          });
+        }
+
+        const replyButtons = document.querySelectorAll('[data-reply]');
+        for (let i = 0; i < replyButtons.length; i += 1) {
+          replyButtons[i].addEventListener('click', function () {
+            const idx = Number(this.getAttribute('data-reply'));
+            if (Number.isNaN(idx) || !posts[idx]) return;
+            const input = document.getElementById('reply-' + idx);
+            if (!input) return;
+            const val = (input.value || '').trim();
+            if (!val) return;
+            if (!Array.isArray(posts[idx].replies)) posts[idx].replies = [];
+            posts[idx].replies.push(currentUser + ': ' + val);
+            input.value = '';
+            savePosts(posts);
+            renderFeed();
+          });
+        }
+      }
+
+      function clearPreview() {
+        pendingImage = null;
+        const wrap = document.getElementById('imagePreviewWrap');
+        wrap.innerHTML = '';
+        wrap.classList.add('hidden');
+      }
+
+      document.getElementById('pickImageBtn').addEventListener('click', function () {
+        document.getElementById('imageInput').click();
+      });
+
+      document.getElementById('imageInput').addEventListener('change', function (e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function () {
+          pendingImage = String(reader.result || '');
+          const wrap = document.getElementById('imagePreviewWrap');
+          wrap.classList.remove('hidden');
+          wrap.innerHTML = '<img src="' + pendingImage + '" alt="preview" style="max-width:180px;border:1px solid #e5e7eb;border-radius:10px" />'
+            + ' <button type="button" class="small-btn" id="removeImageBtn">ลบรูป</button>';
+          const btn = document.getElementById('removeImageBtn');
+          if (btn) btn.addEventListener('click', clearPreview);
+        };
+        reader.readAsDataURL(file);
+      });
+
+      const emojiButtons = document.querySelectorAll('.emoji-btn');
+      for (let i = 0; i < emojiButtons.length; i += 1) {
+        emojiButtons[i].addEventListener('click', function () {
+          const emo = this.getAttribute('data-emoji') || '';
+          const ta = document.getElementById('postInput');
+          ta.value = (ta.value || '') + emo;
+          ta.focus();
+        });
+      }
+
+      document.getElementById('gifBtn').addEventListener('click', function () {
+        const ta = document.getElementById('postInput');
+        ta.value = (ta.value || '') + ' [GIF]';
         ta.focus();
       });
-    });
 
-    document.getElementById('postBtn').addEventListener('click', () => {
-      const ta = document.getElementById('postText');
-      const text = (ta.value || '').trim();
-      if (!text) return;
-      posts.unshift({
-        id: Date.now(),
-        user: username,
-        text,
-        image: null,
-        likes: 0,
-        replies: [],
-        at: new Date().toISOString(),
+      document.getElementById('stickerBtn').addEventListener('click', function () {
+        const ta = document.getElementById('postInput');
+        ta.value = (ta.value || '') + ' [Sticker]';
+        ta.focus();
       });
-      ta.value = '';
-      savePosts();
+
+      document.getElementById('postBtn').addEventListener('click', function () {
+        const ta = document.getElementById('postInput');
+        const text = (ta.value || '').trim();
+        if (!text && !pendingImage) return;
+        posts.unshift({
+          id: Date.now(),
+          user: currentUser,
+          text: text,
+          image: pendingImage || '',
+          likes: 0,
+          replies: [],
+          createdAt: new Date().toISOString()
+        });
+        ta.value = '';
+        clearPreview();
+        savePosts(posts);
+        renderFeed();
+      });
+
       renderFeed();
-    });
-
-    loadPosts();
-    renderFeed();
-
-    window.likePost = likePost;
-    window.replyPost = replyPost;
-  </script>
-</body>
-</html>`;
+    </script>
+  `);
 }
 
 function renderAdminDashboard(session) {
