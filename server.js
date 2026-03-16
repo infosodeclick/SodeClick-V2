@@ -14,6 +14,7 @@ const blocksFile = path.join(dataDir, 'blocks.json');
 const reportsFile = path.join(dataDir, 'reports.json');
 const giftsFile = path.join(dataDir, 'gift-transactions.json');
 const coinTxFile = path.join(dataDir, 'coin-transactions.json');
+const frameTxFile = path.join(dataDir, 'frame-transactions.json');
 
 const userSessions = new Map(); // sid -> { email, username }
 
@@ -28,6 +29,7 @@ function ensureData() {
   if (!fs.existsSync(reportsFile)) fs.writeFileSync(reportsFile, '[]', 'utf8');
   if (!fs.existsSync(giftsFile)) fs.writeFileSync(giftsFile, '[]', 'utf8');
   if (!fs.existsSync(coinTxFile)) fs.writeFileSync(coinTxFile, '[]', 'utf8');
+  if (!fs.existsSync(frameTxFile)) fs.writeFileSync(frameTxFile, '[]', 'utf8');
 }
 
 function readJson(file) {
@@ -314,6 +316,48 @@ function renderChatPage(me, matchId, info = '') {
   `);
 }
 
+function renderShopPage(me, info = '') {
+  const catalog = [
+    { id: 'F001', name: 'Sky Blue', price: 0 },
+    { id: 'F002', name: 'Pink Glow', price: 30 },
+    { id: 'F003', name: 'Neon Heart', price: 60 },
+    { id: 'F004', name: 'Golden VIP', price: 120 },
+  ];
+  const owned = Array.isArray(me.framesOwned) ? me.framesOwned : [];
+  const cards = catalog.map((f) => {
+    const isOwned = owned.includes(f.id);
+    const isActive = me.activeFrame === f.id;
+    return `
+      <div class="card" style="padding:12px;border-radius:12px">
+        <strong>${f.name}</strong>
+        <div class="muted" style="margin:6px 0">รหัส ${f.id} • ${f.price === 0 ? 'ฟรี' : f.price + ' coins'}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${isOwned ? `<form method="POST" action="/shop/use"><input type="hidden" name="frameId" value="${f.id}"/><button class="btn" ${isActive ? 'disabled' : ''} type="submit">${isActive ? 'กำลังใช้งาน' : 'ใช้กรอบนี้'}</button></form>` : `<form method="POST" action="/shop/buy"><input type="hidden" name="frameId" value="${f.id}"/><input type="hidden" name="price" value="${f.price}"/><button class="btn btn-primary" type="submit">ซื้อ</button></form>`}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const tx = readJson(frameTxFile).filter((t) => t.username === me.username).slice(-30).reverse();
+  const rows = tx.map((t) => `<tr><td>${new Date(t.at).toLocaleString('th-TH')}</td><td>${t.type}</td><td>${t.frameId}</td><td>${t.price}</td></tr>`).join('');
+
+  return htmlPage('ร้านค้ากรอบโปรไฟล์', `
+    <main class="card" style="display:grid;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">ร้านค้ากรอบโปรไฟล์</h2><div style="display:flex;gap:8px"><span class="ok" style="padding:8px 10px">Coins: ${me.coins || 0}</span><a class="btn" href="/profile">โปรไฟล์</a><a class="btn" href="/wallet">Wallet</a></div></div>
+      ${info ? `<div class="ok">${info}</div>` : ''}
+      <section class="card" style="padding:12px;border-radius:12px">
+        <strong>กรอบที่ใช้งาน:</strong> ${me.activeFrame || 'ปิดการใช้กรอบ'}
+        <form method="POST" action="/shop/disable" style="margin-top:8px"><button class="btn" type="submit">ปิดการใช้กรอบ</button></form>
+      </section>
+      <section class="grid">${cards}</section>
+      <section class="card" style="padding:0;border-radius:12px;overflow:hidden">
+        <div style="padding:12px"><strong>ประวัติซื้อกรอบ</strong></div>
+        <div style="overflow:auto;padding:0 12px 12px"><table><thead><tr><th>เวลา</th><th>ประเภท</th><th>กรอบ</th><th>ราคา</th></tr></thead><tbody>${rows || '<tr><td colspan="4">ยังไม่มีรายการ</td></tr>'}</tbody></table></div>
+      </section>
+    </main>
+  `);
+}
+
 function renderVipPage(me, info = '') {
   const plans = [
     { id: 'vip7', name: 'VIP 7 วัน', price: 99, days: 7 },
@@ -383,7 +427,7 @@ function renderWalletPage(me, info = '') {
     <main class="card" style="display:grid;gap:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
         <h2 style="margin:0">Wallet / Coins</h2>
-        <div style="display:flex;gap:8px"><span class="ok" style="padding:8px 10px">เหรียญคงเหลือ: ${me.coins || 0}</span><a class="btn" href="/profile">โปรไฟล์</a><a class="btn" href="/match">Match</a></div>
+        <div style="display:flex;gap:8px"><span class="ok" style="padding:8px 10px">เหรียญคงเหลือ: ${me.coins || 0}</span><a class="btn" href="/shop">Shop</a><a class="btn" href="/profile">โปรไฟล์</a><a class="btn" href="/match">Match</a></div>
       </div>
       ${info ? `<div class="ok">${info}</div>` : ''}
       <section><strong>แพ็กเกจเหรียญ</strong><div class="grid" style="margin-top:8px">${packCards}</div></section>
@@ -551,6 +595,8 @@ const server = http.createServer((req, res) => {
         phoneVerified: false,
         occupation: '',
         relationshipGoal: 'friend',
+        framesOwned: ['F001'],
+        activeFrame: '',
         createdAt: Date.now(),
       });
       writeJson(usersFile, users);
@@ -920,6 +966,127 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(renderVipPage(users[idx], 'สมัคร VIP สำเร็จ'));
     });
+    return;
+  }
+
+  if (url.pathname === '/shop' && req.method === 'GET') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderShopPage(me));
+    return;
+  }
+
+  if (url.pathname === '/shop/buy' && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const frameId = String(body.frameId || '').trim();
+      const price = Number(body.price || 0);
+      const users = readJson(usersFile);
+      const idx = users.findIndex((u) => u.username === me.username);
+      if (idx < 0 || !frameId) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderShopPage(me, 'ข้อมูลไม่ถูกต้อง'));
+        return;
+      }
+      users[idx].framesOwned = Array.isArray(users[idx].framesOwned) ? users[idx].framesOwned : ['F001'];
+      if (users[idx].framesOwned.includes(frameId)) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderShopPage(users[idx], 'คุณซื้อกรอบนี้แล้ว'));
+        return;
+      }
+      if ((users[idx].coins || 0) < price) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderShopPage(users[idx], 'เหรียญไม่พอ'));
+        return;
+      }
+      users[idx].coins = (users[idx].coins || 0) - price;
+      users[idx].framesOwned.push(frameId);
+      users[idx].updatedAt = Date.now();
+      writeJson(usersFile, users);
+      const tx = readJson(coinTxFile);
+      tx.push({ id: `CTX${Date.now()}`, username: me.username, type: 'buy_frame', amount: -price, note: `ซื้อกรอบ ${frameId}`, at: Date.now() });
+      writeJson(coinTxFile, tx);
+      const ftx = readJson(frameTxFile);
+      ftx.push({ id: `FTX${Date.now()}`, username: me.username, type: 'buy', frameId, price, at: Date.now() });
+      writeJson(frameTxFile, ftx);
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderShopPage(users[idx], `ซื้อกรอบ ${frameId} สำเร็จ`));
+    });
+    return;
+  }
+
+  if (url.pathname === '/shop/use' && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const frameId = String(body.frameId || '').trim();
+      const users = readJson(usersFile);
+      const idx = users.findIndex((u) => u.username === me.username);
+      if (idx < 0) {
+        res.writeHead(302, { Location: '/login' });
+        res.end();
+        return;
+      }
+      users[idx].framesOwned = Array.isArray(users[idx].framesOwned) ? users[idx].framesOwned : ['F001'];
+      if (!users[idx].framesOwned.includes(frameId)) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderShopPage(users[idx], 'คุณยังไม่ได้ซื้อกรอบนี้'));
+        return;
+      }
+      users[idx].activeFrame = frameId;
+      users[idx].updatedAt = Date.now();
+      writeJson(usersFile, users);
+      const ftx = readJson(frameTxFile);
+      ftx.push({ id: `FTX${Date.now()}`, username: me.username, type: 'use', frameId, price: 0, at: Date.now() });
+      writeJson(frameTxFile, ftx);
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderShopPage(users[idx], `เปลี่ยนมาใช้กรอบ ${frameId} แล้ว`));
+    });
+    return;
+  }
+
+  if (url.pathname === '/shop/disable' && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    const users = readJson(usersFile);
+    const idx = users.findIndex((u) => u.username === me.username);
+    if (idx >= 0) {
+      users[idx].activeFrame = '';
+      users[idx].updatedAt = Date.now();
+      writeJson(usersFile, users);
+      const ftx = readJson(frameTxFile);
+      ftx.push({ id: `FTX${Date.now()}`, username: me.username, type: 'disable', frameId: '-', price: 0, at: Date.now() });
+      writeJson(frameTxFile, ftx);
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderShopPage(users[idx], 'ปิดการใช้กรอบแล้ว'));
+      return;
+    }
+    res.writeHead(302, { Location: '/login' });
+    res.end();
     return;
   }
 
