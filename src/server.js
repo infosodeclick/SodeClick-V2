@@ -15,6 +15,22 @@ const sessions = new Map();
 const userSessions = new Map();
 const userProfiles = new Map();
 
+const frameCatalog = [
+  { id: 'F001', name: 'Sky Blue', price: 0, premium: false },
+  { id: 'F002', name: 'Pink Glow', price: 19, premium: true },
+  { id: 'F003', name: 'Neon Star', price: 29, premium: true },
+  { id: 'F004', name: 'Dark Pro', price: 49, premium: true },
+];
+
+const membershipPlans = [
+  { id: 'M_FREE', name: 'Free', price: 0, coins: 0 },
+  { id: 'M_PLUS', name: 'Plus', price: 99, coins: 120 },
+  { id: 'M_PRO', name: 'Pro', price: 199, coins: 300 },
+];
+
+const shopOrders = [];
+const earningsLedger = [];
+
 let members = [
   { id: 'U001', name: 'Nina', email: 'nina@example.com', gender: 'female', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3) },
   { id: 'U002', name: 'Mild', email: 'mild@example.com', gender: 'female', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2) },
@@ -106,6 +122,10 @@ function getOrCreateUserProfile(session) {
       location: 'Thailand',
       status: 'online',
       interests: 'เพลง, แชท, เกม',
+      coins: 50,
+      membership: 'M_FREE',
+      framesOwned: ['F001'],
+      activeFrame: 'F001',
       updatedAt: new Date(),
     });
   }
@@ -414,11 +434,11 @@ function renderUserApp(session) {
     <main class="card social-wrap">
       <div class="board-topbar">
         <nav class="board-nav">
-          <a class="board-tab active" href="/app">📋 กระดาน</a>
-          <a class="board-tab" href="/app?tab=online">🟢 ออนไลน์</a>
-          <a class="board-tab" href="/app?tab=dj">🎧 ดีเจ</a>
-          <a class="board-tab" href="/app?tab=superstar">⭐ ซุปตาร์</a>
-          <a class="board-tab" href="/app?tab=games">🎮 เกมส์</a>
+          <a class="board-tab active" href="/app">📋 บอร์ด</a>
+          <a class="board-tab" href="/app/shop">🛍 ร้านค้า</a>
+          <a class="board-tab" href="/app/membership">💎 สมัครสมาชิก</a>
+          <a class="board-tab" href="/app/earn">💰 รายได้เว็บ</a>
+          <a class="board-tab" href="/app/profile">👤 โปรไฟล์</a>
         </nav>
         <div class="top-actions">
           <a class="top-btn profile" href="/app/profile">👤 โปรไฟล์</a>
@@ -649,6 +669,100 @@ function renderUserProfile(session, profile, message = '') {
 
       <section class="stat" style="background:#f8fafc">
         <div class="muted">อัปเดตล่าสุด: ${new Date(profile.updatedAt || new Date()).toLocaleString('th-TH')}</div>
+      </section>
+    </main>
+  `);
+}
+
+function renderShopPage(session, profile, message = '') {
+  const cards = frameCatalog.map((f) => {
+    const owned = (profile.framesOwned || []).includes(f.id);
+    const active = profile.activeFrame === f.id;
+    return `
+      <div class="stat">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <strong>${f.name}</strong>
+          <span class="pill">${f.price === 0 ? 'ฟรี' : `${f.price} coins`}</span>
+        </div>
+        <p class="muted" style="margin:6px 0">รหัส: ${f.id} • ${f.premium ? 'พรีเมียม' : 'มาตรฐาน'}</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${owned ? `<form method="POST" action="/app/shop/use"><input type="hidden" name="frameId" value="${f.id}" /><button class="btn" ${active ? 'disabled' : ''} type="submit">${active ? 'กำลังใช้งาน' : 'ใช้กรอบนี้'}</button></form>` : `<form method="POST" action="/app/shop/buy"><input type="hidden" name="frameId" value="${f.id}" /><button class="btn btn-primary" type="submit">ซื้อกรอบนี้</button></form>`}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return htmlPage('ร้านค้า - SodeClick V2', `
+    <main class="card" style="display:grid;gap:12px">
+      <div class="head">
+        <h2 style="margin:0">ร้านค้ากรอบโปรไฟล์</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="pill">เหรียญคงเหลือ: ${profile.coins || 0}</span>
+          <a class="btn" href="/app">กลับบอร์ด</a>
+        </div>
+      </div>
+      ${message ? `<div class="stat" style="border-color:#86efac;background:#f0fdf4;color:#166534">${message}</div>` : ''}
+      <section class="grid">${cards}</section>
+    </main>
+  `);
+}
+
+function renderMembershipPage(session, profile, message = '') {
+  const plans = membershipPlans.map((p) => `
+    <div class="stat">
+      <strong>${p.name}</strong>
+      <p class="muted" style="margin:6px 0">${p.price === 0 ? 'ฟรี' : p.price + ' บาท/เดือน'} • โบนัส ${p.coins} coins</p>
+      <form method="POST" action="/app/membership/subscribe">
+        <input type="hidden" name="planId" value="${p.id}" />
+        <button class="btn ${profile.membership === p.id ? '' : 'btn-primary'}" ${profile.membership === p.id ? 'disabled' : ''} type="submit">
+          ${profile.membership === p.id ? 'แพ็กเกจปัจจุบัน' : 'สมัครแพ็กเกจนี้'}
+        </button>
+      </form>
+    </div>
+  `).join('');
+
+  return htmlPage('สมาชิก - SodeClick V2', `
+    <main class="card" style="display:grid;gap:12px">
+      <div class="head">
+        <h2 style="margin:0">สมัครสมาชิก</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="pill">แพ็กเกจปัจจุบัน: ${profile.membership}</span>
+          <a class="btn" href="/app">กลับบอร์ด</a>
+        </div>
+      </div>
+      ${message ? `<div class="stat" style="border-color:#86efac;background:#f0fdf4;color:#166534">${message}</div>` : ''}
+      <section class="grid">${plans}</section>
+    </main>
+  `);
+}
+
+function renderEarningsPage(session, profile, message = '') {
+  const latest = earningsLedger.filter((x) => x.username === session.username).slice(0, 8)
+    .map((x) => `<tr><td>${x.at.toLocaleString('th-TH')}</td><td>${x.type}</td><td>${x.amount}</td><td>${x.note}</td></tr>`).join('');
+
+  return htmlPage('รายได้เข้าเว็บ - SodeClick V2', `
+    <main class="card" style="display:grid;gap:12px">
+      <div class="head">
+        <h2 style="margin:0">ศูนย์รายได้เข้าเว็บ</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" href="/app">กลับบอร์ด</a></div>
+      </div>
+      ${message ? `<div class="stat" style="border-color:#86efac;background:#f0fdf4;color:#166534">${message}</div>` : ''}
+      <div class="grid">
+        <div class="stat"><div class="k">สะสมเหรียญ</div><div class="v">${profile.coins || 0}</div></div>
+        <div class="stat"><div class="k">ช่องทางรายได้</div><div class="v">สมาชิก / ร้านค้า / โฆษณา</div></div>
+      </div>
+      <section class="stat">
+        <h3 style="margin:0 0 8px">กิจกรรมสร้างรายได้</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <form method="POST" action="/app/earn/checkin"><button class="btn btn-primary" type="submit">เช็คอินรายวัน (+5)</button></form>
+          <form method="POST" action="/app/earn/invite"><button class="btn" type="submit">จำลองชวนเพื่อน (+20)</button></form>
+        </div>
+      </section>
+      <section class="stat" style="padding:0;overflow:hidden">
+        <div style="padding:12px"><strong>ประวัติรายได้ล่าสุด</strong></div>
+        <div style="overflow:auto;padding:0 12px 12px">
+          <table><thead><tr><th>เวลา</th><th>ประเภท</th><th>จำนวน</th><th>หมายเหตุ</th></tr></thead><tbody>${latest || '<tr><td colspan="4">ยังไม่มีกิจกรรม</td></tr>'}</tbody></table>
+        </div>
       </section>
     </main>
   `);
@@ -1174,6 +1288,125 @@ const server = http.createServer(async (req, res) => {
 
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(renderUserProfile(userSession, profile, 'บันทึกโปรไฟล์เรียบร้อยแล้ว'));
+    return;
+  }
+
+  if (path === '/app/shop' && req.method === 'GET') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const profile = getOrCreateUserProfile(userSession);
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderShopPage(userSession, profile));
+    return;
+  }
+
+  if (path === '/app/shop/buy' && req.method === 'POST') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const profile = getOrCreateUserProfile(userSession);
+    const body = await parseBody(req);
+    const frame = frameCatalog.find((f) => f.id === body.frameId);
+    if (!frame) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderShopPage(userSession, profile, 'ไม่พบสินค้าที่เลือก'));
+      return;
+    }
+    if ((profile.framesOwned || []).includes(frame.id)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderShopPage(userSession, profile, 'คุณมีกรอบนี้อยู่แล้ว'));
+      return;
+    }
+    if ((profile.coins || 0) < frame.price) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderShopPage(userSession, profile, 'เหรียญไม่พอ กรุณาไปที่รายได้เว็บ/สมัครสมาชิก'));
+      return;
+    }
+    profile.coins -= frame.price;
+    profile.framesOwned.push(frame.id);
+    profile.updatedAt = new Date();
+    shopOrders.unshift({ id: crypto.randomBytes(4).toString('hex'), username: userSession.username, frameId: frame.id, amount: frame.price, at: new Date() });
+    earningsLedger.unshift({ username: userSession.username, type: 'shop_purchase', amount: -frame.price, note: `ซื้อ ${frame.name}`, at: new Date() });
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderShopPage(userSession, profile, `ซื้อ ${frame.name} สำเร็จ`));
+    return;
+  }
+
+  if (path === '/app/shop/use' && req.method === 'POST') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const profile = getOrCreateUserProfile(userSession);
+    const body = await parseBody(req);
+    if ((profile.framesOwned || []).includes(body.frameId)) {
+      profile.activeFrame = body.frameId;
+      profile.updatedAt = new Date();
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderShopPage(userSession, profile, 'ตั้งค่ากรอบโปรไฟล์เรียบร้อย'));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderShopPage(userSession, profile, 'คุณยังไม่ได้เป็นเจ้าของกรอบนี้'));
+    return;
+  }
+
+  if (path === '/app/membership' && req.method === 'GET') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const profile = getOrCreateUserProfile(userSession);
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderMembershipPage(userSession, profile));
+    return;
+  }
+
+  if (path === '/app/membership/subscribe' && req.method === 'POST') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const profile = getOrCreateUserProfile(userSession);
+    const body = await parseBody(req);
+    const plan = membershipPlans.find((p) => p.id === body.planId);
+    if (!plan) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderMembershipPage(userSession, profile, 'ไม่พบแพ็กเกจ'));
+      return;
+    }
+    profile.membership = plan.id;
+    profile.coins = (profile.coins || 0) + plan.coins;
+    profile.updatedAt = new Date();
+    earningsLedger.unshift({ username: userSession.username, type: 'membership_subscribe', amount: plan.coins, note: `สมัคร ${plan.name}`, at: new Date() });
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderMembershipPage(userSession, profile, `สมัคร ${plan.name} สำเร็จ (+${plan.coins} coins)`));
+    return;
+  }
+
+  if (path === '/app/earn' && req.method === 'GET') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const profile = getOrCreateUserProfile(userSession);
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderEarningsPage(userSession, profile));
+    return;
+  }
+
+  if (path === '/app/earn/checkin' && req.method === 'POST') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const profile = getOrCreateUserProfile(userSession);
+    profile.coins = (profile.coins || 0) + 5;
+    profile.updatedAt = new Date();
+    earningsLedger.unshift({ username: userSession.username, type: 'daily_checkin', amount: 5, note: 'เช็คอินรายวัน', at: new Date() });
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderEarningsPage(userSession, profile, 'เช็คอินสำเร็จ (+5 coins)'));
+    return;
+  }
+
+  if (path === '/app/earn/invite' && req.method === 'POST') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const profile = getOrCreateUserProfile(userSession);
+    profile.coins = (profile.coins || 0) + 20;
+    profile.updatedAt = new Date();
+    earningsLedger.unshift({ username: userSession.username, type: 'invite_friend', amount: 20, note: 'จำลองชวนเพื่อน', at: new Date() });
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderEarningsPage(userSession, profile, 'เพิ่มรายได้สำเร็จ (+20 coins)'));
     return;
   }
 
