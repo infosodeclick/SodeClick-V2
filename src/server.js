@@ -349,9 +349,11 @@ function renderUserApp(session) {
   return htmlPage('หน้าบ้าน - SodeClick V2', `
     <style>
       .social-wrap { display:grid; gap:12px; }
-      .board-topbar { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; background:#fff; border:1px solid #e5e7eb; }
-      .board-title { font-weight:800; font-size:18px; }
-      .top-actions { display:flex; gap:8px; }
+      .board-topbar { display:flex; justify-content:space-between; align-items:stretch; gap:10px; padding:0; border-radius:12px; background:#2f86c7; border:1px solid #2a7dbb; overflow:hidden; }
+      .board-nav { display:flex; align-items:center; overflow:auto; }
+      .board-tab { color:#e9f4ff; text-decoration:none; padding:14px 18px; font-weight:700; display:flex; align-items:center; gap:8px; white-space:nowrap; border-right:1px solid rgba(255,255,255,.12); }
+      .board-tab.active { background:#ffffff; color:#2f86c7; }
+      .top-actions { display:flex; align-items:center; gap:8px; padding:8px; }
       .top-btn { border:0; border-radius:10px; color:#fff; padding:8px 12px; font-weight:700; text-decoration:none; }
       .top-btn.logout { background:#111827; }
       .top-btn.profile { background:#16a34a; }
@@ -382,7 +384,13 @@ function renderUserApp(session) {
 
     <main class="card social-wrap">
       <div class="board-topbar">
-        <div class="board-title">บอร์ด</div>
+        <nav class="board-nav">
+          <a class="board-tab active" href="/app">📋 กระดาน</a>
+          <a class="board-tab" href="/app?tab=online">🟢 ออนไลน์</a>
+          <a class="board-tab" href="/app?tab=dj">🎧 ดีเจ</a>
+          <a class="board-tab" href="/app?tab=superstar">⭐ ซุปตาร์</a>
+          <a class="board-tab" href="/app?tab=games">🎮 เกมส์</a>
+        </nav>
         <div class="top-actions">
           <a class="top-btn profile" href="/app?tab=profile">โปรไฟล์</a>
           <a class="top-btn logout" href="/logout">Logout</a>
