@@ -362,11 +362,11 @@ function renderUserApp(session) {
       .composer-head { padding:10px 12px; border-bottom:1px solid #eef2f7; color:#64748b; font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:10px; }
       .composer-body { padding:10px 12px; }
       .composer-input { width:100%; min-height:92px; border:1px solid #d1d5db; border-radius:10px; padding:10px; resize:vertical; font-family:inherit; }
-      .composer-actions { display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:10px; }
-      .tool-row { display:flex; flex-wrap:wrap; gap:8px; }
+      .composer-actions { display:flex; justify-content:flex-end; align-items:center; margin-top:10px; gap:10px; }
+      .tool-row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
       .icon-btn { border:1px solid #dbe3f0; border-radius:10px; background:#fff; padding:7px 10px; cursor:pointer; }
       .emoji-wrap { position:relative; }
-      .emoji-panel { position:absolute; bottom:42px; left:0; right:auto; width:340px; max-width:min(340px, calc(100vw - 40px)); background:#fff; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 18px 35px rgba(0,0,0,.18); padding:10px; z-index:30; overflow:hidden; }
+      .emoji-panel { position:absolute; bottom:42px; right:0; left:auto; width:340px; max-width:min(340px, calc(100vw - 40px)); background:#fff; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 18px 35px rgba(0,0,0,.18); padding:10px; z-index:30; overflow:hidden; }
       .emoji-head { color:#6b7280; font-size:13px; margin-bottom:6px; font-weight:700; }
       .emoji-grid { display:grid; grid-template-columns:repeat(8, minmax(0,1fr)); gap:6px; max-width:100%; overflow:hidden; }
       .emoji-chip { border:0; background:#fff; border-radius:8px; font-size:22px; line-height:1; padding:5px; cursor:pointer; width:100%; }
@@ -388,7 +388,7 @@ function renderUserApp(session) {
       .empty-feed { border:1px dashed #cbd5e1; border-radius:12px; background:#fff; padding:16px; color:#64748b; text-align:center; }
       .hidden { display:none; }
       @media (max-width: 640px) {
-        .emoji-panel { width:300px; left:0; right:auto; }
+        .emoji-panel { width:300px; right:0; left:auto; }
         .emoji-grid { grid-template-columns:repeat(7, minmax(0,1fr)); }
       }
     </style>
