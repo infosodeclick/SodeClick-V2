@@ -365,6 +365,12 @@ function renderUserApp(session) {
       .composer-actions { display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:10px; }
       .tool-row { display:flex; flex-wrap:wrap; gap:8px; }
       .icon-btn { border:1px solid #dbe3f0; border-radius:10px; background:#fff; padding:7px 10px; cursor:pointer; }
+      .emoji-wrap { position:relative; }
+      .emoji-panel { position:absolute; bottom:42px; left:0; width:340px; background:#fff; border:1px solid #e5e7eb; border-radius:14px; box-shadow:0 18px 35px rgba(0,0,0,.18); padding:10px; z-index:30; }
+      .emoji-head { color:#6b7280; font-size:13px; margin-bottom:6px; font-weight:700; }
+      .emoji-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:6px; }
+      .emoji-chip { border:0; background:#fff; border-radius:8px; font-size:23px; line-height:1; padding:5px; cursor:pointer; }
+      .emoji-chip:hover { background:#f3f4f6; }
       .send-btn { padding:8px 14px; border:0; border-radius:10px; font-weight:700; color:#fff; background:linear-gradient(135deg,#60a5fa,#f9a8d4); cursor:pointer; }
       .feed-list { display:grid; gap:10px; }
       .post-card { border:1px solid #e5e7eb; border-radius:12px; background:#fff; padding:12px; }
@@ -408,21 +414,13 @@ function renderUserApp(session) {
           <div class="composer-actions">
             <div class="tool-row">
               <button type="button" class="icon-btn" id="pickImageBtn">📷 รูป</button>
-              <select id="emojiSelect" class="icon-btn" style="width:120px;max-width:120px">
-                <option value="">😊 อีโมจิ</option>
-                <option value="😊">😊</option>
-                <option value="😂">😂</option>
-                <option value="❤️">❤️</option>
-                <option value="🔥">🔥</option>
-                <option value="👍">👍</option>
-                <option value="🎉">🎉</option>
-                <option value="🥰">🥰</option>
-                <option value="😎">😎</option>
-                <option value="💙">💙</option>
-                <option value="💬">💬</option>
-                <option value="✨">✨</option>
-                <option value="🙏">🙏</option>
-              </select>
+              <div class="emoji-wrap">
+                <button type="button" class="icon-btn" id="emojiToggleBtn">😊 อีโมจิ</button>
+                <div id="emojiPanel" class="emoji-panel hidden">
+                  <div class="emoji-head">ใช้ล่าสุด</div>
+                  <div class="emoji-grid" id="emojiGrid"></div>
+                </div>
+              </div>
               <input id="imageInput" type="file" accept="image/*" class="hidden" />
             </div>
             <button type="button" class="send-btn" id="postBtn">โพสต์</button>
@@ -522,9 +520,29 @@ function renderUserApp(session) {
         reader.readAsDataURL(file);
       });
 
-      document.getElementById('emojiSelect').addEventListener('change', function(){
-        const emo=this.value||''; if(!emo) return;
-        const ta=document.getElementById('postInput'); ta.value=(ta.value||'')+emo; ta.focus(); this.value='';
+      const emojiList = ['😂','🥰','😆','🤣','😀','🤔','😍','😉','😁','😄','😅','😭','😎','😇','🙂','🙃','😘','😜','🤗','🙌','👏','🔥','👍','❤️','💙','✨','🎉','🙏','💬','🥳','🤩','😴'];
+      const emojiGrid = document.getElementById('emojiGrid');
+      emojiGrid.innerHTML = emojiList.map((e) => '<button type="button" class="emoji-chip" data-emoji="'+e+'">'+e+'</button>').join('');
+
+      const emojiToggleBtn = document.getElementById('emojiToggleBtn');
+      const emojiPanel = document.getElementById('emojiPanel');
+      emojiToggleBtn.addEventListener('click', function(){
+        emojiPanel.classList.toggle('hidden');
+      });
+
+      emojiGrid.addEventListener('click', function(ev){
+        const btn = ev.target.closest('[data-emoji]');
+        if (!btn) return;
+        const emo = btn.getAttribute('data-emoji') || '';
+        const ta = document.getElementById('postInput');
+        ta.value = (ta.value || '') + emo;
+        ta.focus();
+        emojiPanel.classList.add('hidden');
+      });
+
+      document.addEventListener('click', function(ev){
+        const wrap = ev.target.closest('.emoji-wrap');
+        if (!wrap) emojiPanel.classList.add('hidden');
       });
 
       document.getElementById('postBtn').addEventListener('click', function(){
