@@ -239,6 +239,23 @@ function canDoAction(profile, action, cooldownMs = 1200) {
   return true;
 }
 
+function resetAllAppData() {
+  userProfiles.clear();
+  registeredUsers.clear();
+  pendingVerifications.clear();
+
+  userLikes.length = 0;
+  matches.length = 0;
+  shopOrders.length = 0;
+  earningsLedger.length = 0;
+  giftTransactions.length = 0;
+  userReports.length = 0;
+  userBlocks.length = 0;
+
+  chats.clear();
+  saveAppState();
+}
+
 function getAllDatingUsers() {
   return Array.from(registeredUsers.values());
 }
@@ -2052,6 +2069,20 @@ const server = http.createServer(async (req, res) => {
     if (session) addAudit('logout', session.username, `role=${session.role}`);
     if (sid) sessions.delete(sid);
     redirect(res, '/login', 'sid=; HttpOnly; Path=/; Max-Age=0');
+    return;
+  }
+
+  if (path === '/admin/system/reset' && req.method === 'POST') {
+    const session = requireAuth(req, res);
+    if (!session) return;
+    if (session.role !== 'super_admin') {
+      res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end('Forbidden');
+      return;
+    }
+    resetAllAppData();
+    addAudit('system_reset', session.username, 'reset all app data');
+    redirect(res, '/admin/dashboard');
     return;
   }
 
