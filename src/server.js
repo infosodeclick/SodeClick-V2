@@ -389,8 +389,8 @@ function renderUserApp(session) {
 
       function getDefaultPosts() {
         return [
-          { id: Date.now() - 2, user: 'GN', text: 'คิดถึงมากไหมคะ 😊', image: '', likes: 1, replies: [], createdAt: new Date().toISOString() },
-          { id: Date.now() - 1, user: 'นกฮูกปลดแอก', text: 'เขาอาจจะคิดว่าพี่ขำหมดทุกคนก็ได้ 😂', image: '', likes: 3, replies: ['เห็นด้วยเลย'], createdAt: new Date().toISOString() }
+          { id: Date.now() - 2, user: 'GN', text: 'คิดถึงมากไหมคะ 😊', image: '', likes: 1, likedBy: ['GN'], replies: [], createdAt: new Date().toISOString() },
+          { id: Date.now() - 1, user: 'นกฮูกปลดแอก', text: 'เขาอาจจะคิดว่าพี่ขำหมดทุกคนก็ได้ 😂', image: '', likes: 3, likedBy: ['A','B','C'], replies: ['เห็นด้วยเลย'], createdAt: new Date().toISOString() }
         ];
       }
 
@@ -439,6 +439,9 @@ function renderUserApp(session) {
 
           const imageHtml = p.image ? ('<img class="post-image" src="' + p.image + '" alt="post-image" />') : '';
 
+          const likedBy = Array.isArray(p.likedBy) ? p.likedBy : [];
+          const meLiked = likedBy.indexOf(currentUser) >= 0;
+
           html += ''
             + '<article class="post-card">'
             + '  <div class="post-top">'
@@ -450,7 +453,7 @@ function renderUserApp(session) {
             + '  <div class="post-text">' + esc(p.text) + '</div>'
             + imageHtml
             + '  <div class="post-bar">'
-            + '    <button type="button" class="small-btn" data-like="' + i + '">👍 Like (' + (p.likes || 0) + ')</button>'
+            + '    <button type="button" class="small-btn" data-like="' + i + '">' + (meLiked ? '👎 Unlike' : '👍 Like') + ' (' + likedBy.length + ')</button>'
             + '  </div>'
             + '  <div class="reply-row">'
             + '    <input class="reply-input" id="reply-' + i + '" placeholder="เขียนตอบกลับ..." />'
@@ -467,7 +470,16 @@ function renderUserApp(session) {
           likeButtons[i].addEventListener('click', function () {
             const idx = Number(this.getAttribute('data-like'));
             if (Number.isNaN(idx) || !posts[idx]) return;
-            posts[idx].likes = (posts[idx].likes || 0) + 1;
+
+            if (!Array.isArray(posts[idx].likedBy)) posts[idx].likedBy = [];
+            const pos = posts[idx].likedBy.indexOf(currentUser);
+            if (pos >= 0) {
+              posts[idx].likedBy.splice(pos, 1); // กดซ้ำ = ยกเลิก Like
+            } else {
+              posts[idx].likedBy.push(currentUser);
+            }
+            posts[idx].likes = posts[idx].likedBy.length;
+
             savePosts(posts);
             renderFeed();
           });
@@ -550,6 +562,7 @@ function renderUserApp(session) {
           text: text,
           image: pendingImage || '',
           likes: 0,
+          likedBy: [],
           replies: [],
           createdAt: new Date().toISOString()
         });
