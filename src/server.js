@@ -1,5 +1,7 @@
 const http = require('http');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const port = process.env.PORT || 3000;
 
@@ -30,6 +32,57 @@ const membershipPlans = [
 
 const shopOrders = [];
 const earningsLedger = [];
+
+const dataDir = path.join(__dirname, '..', 'data');
+const stateFile = path.join(dataDir, 'app-state.json');
+
+function ensureDataDir() {
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+}
+
+function saveAppState() {
+  ensureDataDir();
+  const payload = {
+    userProfiles: Array.from(userProfiles.entries()),
+    shopOrders,
+    earningsLedger,
+    updatedAt: new Date().toISOString(),
+  };
+  fs.writeFileSync(stateFile, JSON.stringify(payload, null, 2), 'utf8');
+}
+
+function loadAppState() {
+  try {
+    if (!fs.existsSync(stateFile)) return;
+    const raw = fs.readFileSync(stateFile, 'utf8');
+    const parsed = JSON.parse(raw);
+
+    if (Array.isArray(parsed.userProfiles)) {
+      for (const [k, v] of parsed.userProfiles) {
+        if (v && v.updatedAt) v.updatedAt = new Date(v.updatedAt);
+        userProfiles.set(k, v);
+      }
+    }
+
+    if (Array.isArray(parsed.shopOrders)) {
+      parsed.shopOrders.forEach((x) => {
+        if (x && x.at) x.at = new Date(x.at);
+        shopOrders.push(x);
+      });
+    }
+
+    if (Array.isArray(parsed.earningsLedger)) {
+      parsed.earningsLedger.forEach((x) => {
+        if (x && x.at) x.at = new Date(x.at);
+        earningsLedger.push(x);
+      });
+    }
+  } catch (err) {
+    console.error('[state-load-error]', err.message);
+  }
+}
+
+loadAppState();
 
 let members = [
   { id: 'U001', name: 'Nina', email: 'nina@example.com', gender: 'female', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3) },
@@ -127,9 +180,20 @@ function getOrCreateUserProfile(session) {
       framesOwned: ['F001'],
       activeFrame: 'F001',
       updatedAt: new Date(),
+      actionLocks: {},
     });
+    saveAppState();
   }
   return userProfiles.get(key);
+}
+
+function canDoAction(profile, action, cooldownMs = 1200) {
+  profile.actionLocks = profile.actionLocks || {};
+  const now = Date.now();
+  const last = profile.actionLocks[action] || 0;
+  if (now - last < cooldownMs) return false;
+  profile.actionLocks[action] = now;
+  return true;
 }
 
 function hasPermission(role, action) {
@@ -1339,6 +1403,7 @@ const server = http.createServer(async (req, res) => {
     profile.updatedAt = new Date();
 
     userSession.displayName = profile.displayName;
+    saveAppState();
 
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(renderUserProfile(userSession, profile, 'บันทึกโปรไฟล์เรียบร้อยแล้ว'));
@@ -1375,11 +1440,17 @@ const server = http.createServer(async (req, res) => {
       res.end(renderShopPage(userSession, profile, 'เหรียญไม่พอ กรุณาไปที่รายได้เว็บ/สมัครสมาชิก'));
       return;
     }
+    if (!canDoAction(profile, `buy:${frame.id}`)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderShopPage(userSession, profile, 'กรุณารอสักครู่ก่อนกดย้ำรายการเดิม'));
+      return;
+    }
     profile.coins -= frame.price;
     profile.framesOwned.push(frame.id);
     profile.updatedAt = new Date();
     shopOrders.unshift({ id: crypto.randomBytes(4).toString('hex'), username: userSession.username, frameId: frame.id, amount: frame.price, at: new Date() });
     earningsLedger.unshift({ username: userSession.username, type: 'shop_purchase', amount: -frame.price, note: `ซื้อ ${frame.name}`, at: new Date() });
+    saveAppState();
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(renderShopPage(userSession, profile, `ซื้อ ${frame.name} สำเร็จ`));
     return;
@@ -1393,6 +1464,7 @@ const server = http.createServer(async (req, res) => {
     if ((profile.framesOwned || []).includes(body.frameId)) {
       profile.activeFrame = body.frameId;
       profile.updatedAt = new Date();
+      saveAppState();
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(renderShopPage(userSession, profile, 'ตั้งค่ากรอบโปรไฟล์เรียบร้อย'));
       return;
@@ -1422,10 +1494,16 @@ const server = http.createServer(async (req, res) => {
       res.end(renderMembershipPage(userSession, profile, 'ไม่พบแพ็กเกจ'));
       return;
     }
+    if (!canDoAction(profile, `subscribe:${plan.id}`)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderMembershipPage(userSession, profile, 'กรุณารอสักครู่ก่อนกดย้ำรายการเดิม'));
+      return;
+    }
     profile.membership = plan.id;
     profile.coins = (profile.coins || 0) + plan.coins;
     profile.updatedAt = new Date();
     earningsLedger.unshift({ username: userSession.username, type: 'membership_subscribe', amount: plan.coins, note: `สมัคร ${plan.name}`, at: new Date() });
+    saveAppState();
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(renderMembershipPage(userSession, profile, `สมัคร ${plan.name} สำเร็จ (+${plan.coins} coins)`));
     return;
@@ -1444,9 +1522,15 @@ const server = http.createServer(async (req, res) => {
     const userSession = requireUserAuth(req, res);
     if (!userSession) return;
     const profile = getOrCreateUserProfile(userSession);
+    if (!canDoAction(profile, 'daily_checkin', 5000)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderEarningsPage(userSession, profile, 'กดเร็วเกินไป กรุณาลองอีกครั้ง'));
+      return;
+    }
     profile.coins = (profile.coins || 0) + 5;
     profile.updatedAt = new Date();
     earningsLedger.unshift({ username: userSession.username, type: 'daily_checkin', amount: 5, note: 'เช็คอินรายวัน', at: new Date() });
+    saveAppState();
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(renderEarningsPage(userSession, profile, 'เช็คอินสำเร็จ (+5 coins)'));
     return;
@@ -1456,9 +1540,15 @@ const server = http.createServer(async (req, res) => {
     const userSession = requireUserAuth(req, res);
     if (!userSession) return;
     const profile = getOrCreateUserProfile(userSession);
+    if (!canDoAction(profile, 'invite_friend', 5000)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderEarningsPage(userSession, profile, 'กดเร็วเกินไป กรุณาลองอีกครั้ง'));
+      return;
+    }
     profile.coins = (profile.coins || 0) + 20;
     profile.updatedAt = new Date();
     earningsLedger.unshift({ username: userSession.username, type: 'invite_friend', amount: 20, note: 'จำลองชวนเพื่อน', at: new Date() });
+    saveAppState();
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(renderEarningsPage(userSession, profile, 'เพิ่มรายได้สำเร็จ (+20 coins)'));
     return;
