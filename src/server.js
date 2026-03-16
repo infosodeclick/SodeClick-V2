@@ -595,9 +595,12 @@ function renderUserProfile(session, profile, message = '') {
       <section class="stat" style="display:grid;grid-template-columns:190px 1fr;gap:18px;align-items:center;background:#fff">
         <div style="position:relative;width:170px;height:170px;border-radius:999px;background:linear-gradient(135deg,#fef3c7,#fbcfe8);border:1px solid #f5d0fe;display:flex;align-items:center;justify-content:center;font-size:42px">💮</div>
         <div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <div style="font-size:44px;font-weight:800;line-height:1">sodeclick</div>
-            <span style="font-size:20px">⚙️</span>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <div style="font-size:44px;font-weight:800;line-height:1">sodeclick</div>
+              <span style="font-size:20px">⚙️</span>
+            </div>
+            <a class="btn" href="#edit-profile-form" style="background:#fff">แก้ไขโปรไฟล์</a>
           </div>
           <div style="font-size:34px;font-weight:700;margin-top:4px">${profile.displayName}</div>
           <div style="margin-top:8px;font-size:26px;font-weight:700;display:flex;gap:18px;flex-wrap:wrap">
@@ -610,7 +613,7 @@ function renderUserProfile(session, profile, message = '') {
         </div>
       </section>
 
-      <section class="stat">
+      <section class="stat" id="edit-profile-form">
         <form method="POST" action="/app/profile" style="display:grid;gap:10px">
           <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
             <div>
