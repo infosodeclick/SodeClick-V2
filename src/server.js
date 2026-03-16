@@ -361,7 +361,7 @@ function renderUserApp(session) {
       .composer-head { padding:10px 12px; border-bottom:1px solid #eef2f7; color:#64748b; font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:10px; }
       .composer-body { padding:10px 12px; }
       .composer-input { width:100%; min-height:92px; border:1px solid #d1d5db; border-radius:10px; padding:10px; resize:vertical; font-family:inherit; }
-      .composer-actions { display:flex; justify-content:flex-end; align-items:center; margin-top:10px; gap:10px; }
+      .composer-actions { display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:10px; }
       .tool-row { display:flex; flex-wrap:wrap; gap:8px; }
       .icon-btn { border:1px solid #dbe3f0; border-radius:10px; background:#fff; padding:7px 10px; cursor:pointer; }
       .send-btn { padding:8px 14px; border:0; border-radius:10px; font-weight:700; color:#fff; background:linear-gradient(135deg,#60a5fa,#f9a8d4); cursor:pointer; }
@@ -400,30 +400,30 @@ function renderUserApp(session) {
       <div class="composer-box">
         <div class="composer-head">
           <span>แสดงความคิดเห็นในชื่อ ${session.displayName || session.username}</span>
-          <div class="tool-row">
-            <button type="button" class="icon-btn" id="pickImageBtn">📷 รูป</button>
-            <select id="emojiSelect" class="icon-btn" style="width:120px;max-width:120px">
-              <option value="">😊 อีโมจิ</option>
-              <option value="😊">😊</option>
-              <option value="😂">😂</option>
-              <option value="❤️">❤️</option>
-              <option value="🔥">🔥</option>
-              <option value="👍">👍</option>
-              <option value="🎉">🎉</option>
-              <option value="🥰">🥰</option>
-              <option value="😎">😎</option>
-              <option value="💙">💙</option>
-              <option value="💬">💬</option>
-              <option value="✨">✨</option>
-              <option value="🙏">🙏</option>
-            </select>
-            <input id="imageInput" type="file" accept="image/*" class="hidden" />
-          </div>
         </div>
         <div class="composer-body">
           <textarea id="postInput" class="composer-input" placeholder="เขียนโพสต์หรือความคิดเห็น..."></textarea>
           <div id="imagePreviewWrap" class="hidden" style="margin-top:8px"></div>
           <div class="composer-actions">
+            <div class="tool-row">
+              <button type="button" class="icon-btn" id="pickImageBtn">📷 รูป</button>
+              <select id="emojiSelect" class="icon-btn" style="width:120px;max-width:120px">
+                <option value="">😊 อีโมจิ</option>
+                <option value="😊">😊</option>
+                <option value="😂">😂</option>
+                <option value="❤️">❤️</option>
+                <option value="🔥">🔥</option>
+                <option value="👍">👍</option>
+                <option value="🎉">🎉</option>
+                <option value="🥰">🥰</option>
+                <option value="😎">😎</option>
+                <option value="💙">💙</option>
+                <option value="💬">💬</option>
+                <option value="✨">✨</option>
+                <option value="🙏">🙏</option>
+              </select>
+              <input id="imageInput" type="file" accept="image/*" class="hidden" />
+            </div>
             <button type="button" class="send-btn" id="postBtn">โพสต์</button>
           </div>
         </div>
