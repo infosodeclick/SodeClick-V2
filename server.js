@@ -48,6 +48,37 @@ function ensureData() {
   if (!fs.existsSync(coinTxFile)) fs.writeFileSync(coinTxFile, '[]', 'utf8');
   if (!fs.existsSync(frameTxFile)) fs.writeFileSync(frameTxFile, '[]', 'utf8');
   if (!fs.existsSync(boardPostsFile)) fs.writeFileSync(boardPostsFile, '[]', 'utf8');
+
+  // seed test user for stable login on fresh deployments
+  const users = readJson(usersFile);
+  const hasDemoUser = users.some((u) => u.username === 'user' || u.email === 'user@sodeclick.local');
+  if (!hasDemoUser) {
+    users.push({
+      userId: 'USRDEMO1',
+      username: 'user',
+      displayName: 'user',
+      email: 'user@sodeclick.local',
+      password: '123456',
+      gender: 'other',
+      age: 25,
+      location: 'Bangkok',
+      lookingFor: 'all',
+      bio: '',
+      interests: '',
+      status: 'online',
+      coins: 200,
+      vipStatus: false,
+      verifiedBadge: false,
+      emailVerified: true,
+      phoneVerified: false,
+      occupation: '',
+      relationshipGoal: 'friend',
+      framesOwned: ['F001'],
+      activeFrame: '',
+      createdAt: Date.now(),
+    });
+    writeJson(usersFile, users);
+  }
 }
 
 function readJson(file) {
