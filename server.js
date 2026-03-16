@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const { handleAuthRoutes } = require('./modules/auth/routes');
 const { handleProfileRoutes } = require('./modules/profile/routes');
 const { handleMatchRoutes } = require('./modules/match/routes');
+const { handleCommerceRoutes } = require('./modules/commerce/routes');
 
 const port = process.env.PORT || 3000;
 const dataDir = path.join(__dirname, 'data');
@@ -743,6 +744,10 @@ const server = http.createServer(async (req, res) => {
     forgotPasswordPage,
     profilePage,
     renderMatchPage,
+    renderWalletPage,
+    renderVipPage,
+    renderShopPage,
+    frameTxFile,
     getSessionUser,
     createUserId: () => `USR${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
   };
@@ -750,6 +755,7 @@ const server = http.createServer(async (req, res) => {
   if (await handleAuthRoutes({ req, res, url, deps })) return;
   if (await handleProfileRoutes({ req, res, url, deps })) return;
   if (await handleMatchRoutes({ req, res, url, deps })) return;
+  if (await handleCommerceRoutes({ req, res, url, deps })) return;
 
   if (url.pathname === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
