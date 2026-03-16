@@ -93,17 +93,32 @@ function htmlPage(title, body) {
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>${title}</title>
   <style>
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f8fafc;color:#0f172a}
-    .wrap{max-width:980px;margin:6vh auto 0;padding:16px}
-    .card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:22px;box-shadow:0 10px 24px rgba(15,23,42,.06)}
-    .title{margin:0 0 8px;font-size:28px}
-    .muted{color:#64748b}
-    .btn{display:inline-block;text-decoration:none;border:1px solid #d1d5db;background:#fff;padding:8px 12px;border-radius:10px;color:#111827;font-weight:700;cursor:pointer}
-    .btn-primary{border:0;color:#fff;background:linear-gradient(135deg,#60a5fa,#f9a8d4)}
+    :root{--bg:#f8fafc;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e5e7eb;--brand1:#60a5fa;--brand2:#f9a8d4}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+    .wrap{max-width:1100px;margin:4vh auto 0;padding:16px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 10px 24px rgba(15,23,42,.06)}
+    .title{margin:0 0 8px;font-size:28px;line-height:1.2}
+    .muted{color:var(--muted)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:1px solid #d1d5db;background:#fff;padding:8px 12px;border-radius:10px;color:#111827;font-weight:700;cursor:pointer;transition:.15s ease}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(15,23,42,.1)}
+    .btn-primary{border:0;color:#fff;background:linear-gradient(135deg,var(--brand1),var(--brand2))}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
-    input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:10px}
+    input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:10px;font:inherit;background:#fff}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.25)}
     .ok{border:1px solid #86efac;background:#f0fdf4;color:#166534;padding:10px;border-radius:10px}
     .err{border:1px solid #fecaca;background:#fef2f2;color:#991b1b;padding:10px;border-radius:10px}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #eef2f7;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f8fafc;color:#334155;position:sticky;top:0}
+    nav.card{position:sticky;top:10px;z-index:20}
+    @media (max-width:700px){
+      .wrap{margin:2vh auto 0;padding:10px}
+      .card{padding:14px;border-radius:12px}
+      .title{font-size:24px}
+      .btn{padding:8px 10px;font-size:14px}
+      nav.card{top:6px}
+    }
   </style>
 </head>
 <body><div class="wrap">${body}</div></body></html>`;
