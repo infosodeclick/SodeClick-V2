@@ -1009,8 +1009,20 @@ const server = http.createServer(async (req, res) => {
   if (path === '/app') {
     const userSession = requireUserAuth(req, res);
     if (!userSession) return;
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(renderUserApp(userSession));
+    try {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderUserApp(userSession));
+    } catch (err) {
+      console.error('[user-app-render-error]', err);
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(htmlPage('SodeClick V2', `
+        <main class="card">
+          <h2 style="margin-top:0">หน้าหลักผู้ใช้</h2>
+          <p class="muted">เกิดข้อผิดพลาดชั่วคราวในหน้าแอป ระบบสลับเป็นโหมดสำรองให้ใช้งานได้ก่อน</p>
+          <p><a class="btn btn-primary" href="/login">กลับหน้า Login</a></p>
+        </main>
+      `));
+    }
     return;
   }
 
