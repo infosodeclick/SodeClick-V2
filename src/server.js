@@ -935,9 +935,27 @@ function renderEarningsPage(session, profile, message = '') {
   `);
 }
 
-function renderMatchPage(session, message = '') {
-  const all = getAllDatingUsers().filter((u) => u.username !== session.username).slice(0, 20);
-  const cards = all.map((u) => `
+function renderMatchPage(session, message = '', category = 'new') {
+  const me = Array.from(registeredUsers.values()).find((u) => u.username === session.username) || {};
+  const allUsers = getAllDatingUsers().filter((u) => u.username !== session.username);
+
+  const byCategory = {
+    nearby: [...allUsers].sort((a, b) => String(a.location || '').localeCompare(String(b.location || ''))),
+    new: [...allUsers].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)),
+    popular: [...allUsers].sort((a, b) => {
+      const ac = userLikes.filter((x) => x.to === a.username).length;
+      const bc = userLikes.filter((x) => x.to === b.username).length;
+      return bc - ac;
+    }),
+    vip: [...allUsers].filter((u) => {
+      const p = userProfiles.get(u.username);
+      return !!(p && p.vipStatus);
+    }),
+  };
+
+  const scoped = (byCategory[category] || byCategory.new).slice(0, 20);
+
+  const cards = scoped.map((u) => `
     <div class="stat">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
         <strong>${u.displayName || u.username}</strong>
@@ -962,7 +980,13 @@ function renderMatchPage(session, message = '') {
     <main class="card" style="display:grid;gap:12px">
       <div class="head"><h2 style="margin:0">Match</h2><a class="btn" href="/app">กลับบอร์ด</a></div>
       ${message ? `<div class="stat" style="border-color:#86efac;background:#f0fdf4;color:#166534">${message}</div>` : ''}
-      <section class="grid">${cards || '<div class="stat">ยังไม่มีผู้ใช้ให้แนะนำ</div>'}</section>
+      <section class="stat" style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn ${category==='nearby'?'btn-primary':''}" href="/app/match?cat=nearby">Nearby</a>
+        <a class="btn ${category==='new'?'btn-primary':''}" href="/app/match?cat=new">New Users</a>
+        <a class="btn ${category==='popular'?'btn-primary':''}" href="/app/match?cat=popular">Popular</a>
+        <a class="btn ${category==='vip'?'btn-primary':''}" href="/app/match?cat=vip">VIP</a>
+      </section>
+      <section class="grid">${cards || '<div class="stat">ยังไม่มีผู้ใช้ให้แนะนำในหมวดนี้</div>'}</section>
       <section class="stat" style="padding:0;overflow:hidden">
         <div style="padding:12px 12px 0"><strong>รายการ Match ของฉัน</strong></div>
         <div style="overflow:auto;padding:8px 12px 12px"><table><thead><tr><th>เวลา</th><th>คู่แมตช์</th><th>แชท</th></tr></thead><tbody>${myMatches || '<tr><td colspan="3">ยังไม่มี Match</td></tr>'}</tbody></table></div>
@@ -1666,8 +1690,9 @@ const server = http.createServer(async (req, res) => {
   if (path === '/app/match' && req.method === 'GET') {
     const userSession = requireUserAuth(req, res);
     if (!userSession) return;
+    const cat = (url.searchParams.get('cat') || 'new').trim();
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(renderMatchPage(userSession));
+    res.end(renderMatchPage(userSession, '', cat));
     return;
   }
 
