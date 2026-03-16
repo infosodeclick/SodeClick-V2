@@ -1175,37 +1175,91 @@ function renderAuditPage(session) {
 }
 
 function renderRevenuePage(session) {
+  const totalShop = shopOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
+  const totalCoinsIn = earningsLedger.filter((e) => e.amount > 0).reduce((sum, e) => sum + e.amount, 0);
+  const totalCoinsOut = earningsLedger.filter((e) => e.amount < 0).reduce((sum, e) => sum + Math.abs(e.amount), 0);
+
+  const orderRows = shopOrders.slice(0, 20)
+    .map((o) => `<tr><td>${o.at.toLocaleString('th-TH')}</td><td>${o.username}</td><td>${o.frameId}</td><td>${o.amount}</td></tr>`)
+    .join('');
+
+  const earnRows = earningsLedger.slice(0, 30)
+    .map((e) => `<tr><td>${e.at.toLocaleString('th-TH')}</td><td>${e.username}</td><td>${e.type}</td><td>${e.amount}</td><td>${e.note}</td></tr>`)
+    .join('');
+
   return htmlPage('Revenue - Admin', adminShell(session, 'revenue', `
-    <main class="card">
+    <main class="card" style="display:grid;gap:12px">
       <div class="head">
         <h2 style="margin:0">รายได้</h2>
-        <a class="btn" href="/admin/dashboard">กลับภาพรวม</a>
+        <a class="btn" href="/admin/dashboard">กลับแดชบอร์ด</a>
       </div>
-      <p>หน้านี้เป็นโครงสำหรับระบบรายได้ (Revenue) พร้อมต่อยอดเชื่อม Payment/รายงานจริง</p>
+
+      <section class="grid">
+        <div class="stat"><div class="k">ยอดขายร้านค้า (coins)</div><div class="v">${totalShop}</div></div>
+        <div class="stat"><div class="k">รายได้เข้า (coins)</div><div class="v">${totalCoinsIn}</div></div>
+        <div class="stat"><div class="k">รายจ่ายออก (coins)</div><div class="v">${totalCoinsOut}</div></div>
+        <div class="stat"><div class="k">ออเดอร์ทั้งหมด</div><div class="v">${shopOrders.length}</div></div>
+      </section>
+
+      <section class="stat" style="padding:0;overflow:hidden">
+        <div style="padding:12px 12px 0"><strong>คำสั่งซื้อร้านค้า</strong></div>
+        <div style="overflow:auto;padding:8px 12px 12px">
+          <table>
+            <thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>กรอบ</th><th>ราคา</th></tr></thead>
+            <tbody>${orderRows || '<tr><td colspan="4">ยังไม่มีคำสั่งซื้อ</td></tr>'}</tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="stat" style="padding:0;overflow:hidden">
+        <div style="padding:12px 12px 0"><strong>Ledger รายได้ล่าสุด</strong></div>
+        <div style="overflow:auto;padding:8px 12px 12px">
+          <table>
+            <thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>ประเภท</th><th>จำนวน</th><th>หมายเหตุ</th></tr></thead>
+            <tbody>${earnRows || '<tr><td colspan="5">ยังไม่มีข้อมูล</td></tr>'}</tbody>
+          </table>
+        </div>
+      </section>
     </main>
   `));
 }
 
 function renderPromotionsPage(session) {
   return htmlPage('Promotions - Admin', adminShell(session, 'promotions', `
-    <main class="card">
+    <main class="card" style="display:grid;gap:12px">
       <div class="head">
         <h2 style="margin:0">โปรโมชั่น</h2>
-        <a class="btn" href="/admin/dashboard">กลับภาพรวม</a>
+        <a class="btn" href="/admin/dashboard">กลับแดชบอร์ด</a>
       </div>
-      <p>หน้านี้เป็นโครงสำหรับจัดการโปรโมชั่น เช่น คูปอง แคมเปญ และส่วนลด</p>
+      <section class="grid">
+        <div class="stat"><div class="k">คูปองส่วนลด</div><div class="v">WELCOME10</div><p class="muted">ลด 10% สำหรับสมาชิกใหม่</p></div>
+        <div class="stat"><div class="k">แพ็กเกจ Plus</div><div class="v">99 บาท</div><p class="muted">รับเพิ่ม 120 coins</p></div>
+        <div class="stat"><div class="k">แนะนำเพื่อน</div><div class="v">+20 coins</div><p class="muted">เมื่อเชิญเพื่อนสำเร็จ</p></div>
+      </section>
     </main>
   `));
 }
 
 function renderActivitiesPage(session) {
+  const rows = earningsLedger.slice(0, 20)
+    .map((e) => `<tr><td>${e.at.toLocaleString('th-TH')}</td><td>${e.username}</td><td>${e.type}</td><td>${e.note}</td></tr>`)
+    .join('');
+
   return htmlPage('Activities - Admin', adminShell(session, 'activities', `
-    <main class="card">
+    <main class="card" style="display:grid;gap:12px">
       <div class="head">
-        <h2 style="margin:0">กิจกรรม</h2>
-        <a class="btn" href="/admin/audit">เปิด Audit Log</a>
+        <h2 style="margin:0">กิจกรรมระบบ</h2>
+        <a class="btn" href="/admin/audit">ดู Audit Log</a>
       </div>
-      <p>หน้านี้เป็นโครงกิจกรรมระบบ/ผู้ใช้งาน สามารถต่อยอด Timeline หรือ Event Monitor ได้</p>
+      <section class="stat" style="padding:0;overflow:hidden">
+        <div style="padding:12px 12px 0"><strong>กิจกรรมจากระบบรายได้/ร้านค้า</strong></div>
+        <div style="overflow:auto;padding:8px 12px 12px">
+          <table>
+            <thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>ประเภท</th><th>รายละเอียด</th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="4">ยังไม่มีกิจกรรม</td></tr>'}</tbody>
+          </table>
+        </div>
+      </section>
     </main>
   `));
 }
