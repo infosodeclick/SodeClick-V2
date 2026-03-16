@@ -361,23 +361,21 @@ function renderUserApp(session) {
           <div class="composer-actions">
             <div class="tool-row">
               <button type="button" class="icon-btn" id="pickImageBtn">📷 รูป</button>
-              <details style="position:relative">
-                <summary class="icon-btn" style="list-style:none">😊 อีโมจิ</summary>
-                <div style="position:absolute;z-index:20;top:40px;left:0;background:#fff;border:1px solid #dbe3f0;border-radius:10px;padding:8px;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;min-width:220px">
-                  <button type="button" class="icon-btn emoji-pick" data-emoji="😊">😊</button>
-                  <button type="button" class="icon-btn emoji-pick" data-emoji="😂">😂</button>
-                  <button type="button" class="icon-btn emoji-pick" data-emoji="❤️">❤️</button>
-                  <button type="button" class="icon-btn emoji-pick" data-emoji="🔥">🔥</button>
-                  <button type="button" class="icon-btn emoji-pick" data-emoji="👍">👍</button>
-                  <button type="button" class="icon-btn emoji-pick" data-emoji="🎉">🎉</button>
-                  <button type="button" class="icon-btn emoji-pick" data-emoji="🥰">🥰</button>
-                  <button type="button" class="icon-btn emoji-pick" data-emoji="😎">😎</button>
-                  <button type="button" class="icon-btn emoji-pick" data-emoji="💙">💙</button>
-                  <button type="button" class="icon-btn emoji-pick" data-emoji="💬">💬</button>
-                  <button type="button" class="icon-btn emoji-pick" data-emoji="✨">✨</button>
-                  <button type="button" class="icon-btn emoji-pick" data-emoji="🙏">🙏</button>
-                </div>
-              </details>
+              <select id="emojiSelect" class="icon-btn" style="min-width:120px">
+                <option value="">😊 อีโมจิ</option>
+                <option value="😊">😊 ยิ้ม</option>
+                <option value="😂">😂 ขำ</option>
+                <option value="❤️">❤️ หัวใจ</option>
+                <option value="🔥">🔥 ไฟ</option>
+                <option value="👍">👍 ถูกใจ</option>
+                <option value="🎉">🎉 ฉลอง</option>
+                <option value="🥰">🥰 น่ารัก</option>
+                <option value="😎">😎 เท่</option>
+                <option value="💙">💙 ฟ้า</option>
+                <option value="💬">💬 คอมเมนต์</option>
+                <option value="✨">✨ วิ้ง</option>
+                <option value="🙏">🙏 ขอบคุณ</option>
+              </select>
               <input id="imageInput" type="file" accept="image/*" class="hidden" />
             </div>
             <button type="button" class="send-btn" id="postBtn">โพสต์</button>
@@ -541,15 +539,15 @@ function renderUserApp(session) {
         reader.readAsDataURL(file);
       });
 
-      const emojiButtons = document.querySelectorAll('.emoji-pick');
-      for (let i = 0; i < emojiButtons.length; i += 1) {
-        emojiButtons[i].addEventListener('click', function () {
-          const emo = this.getAttribute('data-emoji') || '';
-          const ta = document.getElementById('postInput');
-          ta.value = (ta.value || '') + emo;
-          ta.focus();
-        });
-      }
+      const emojiSelect = document.getElementById('emojiSelect');
+      emojiSelect.addEventListener('change', function () {
+        const emo = this.value || '';
+        if (!emo) return;
+        const ta = document.getElementById('postInput');
+        ta.value = (ta.value || '') + emo;
+        ta.focus();
+        this.value = '';
+      });
 
       document.getElementById('postBtn').addEventListener('click', function () {
         const ta = document.getElementById('postInput');
