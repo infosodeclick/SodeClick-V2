@@ -434,26 +434,25 @@ function renderUserApp(session) {
     function renderFeed() {
       const feed = document.getElementById('feed');
       feed.innerHTML = posts.map((p, idx) => {
-        const replies = (p.replies || []).map(r => \`<div class="reply-item">${r}</div>\`).join('');
-        const img = p.image ? \`<img src="${p.image}" alt="post-image" />\` : '';
-        return \`
-          <article class="post">
-            <div class="post-head">
-              <div class="avatar-sm"></div>
-              <div>
-                <div class="u">${p.user}</div>
-                <div class="t">${new Date(p.at).toLocaleString('th-TH')}</div>
-              </div>
-            </div>
-            <div class="msg">${p.text || ''}${img}</div>
-            <div class="post-actions">
-              <button class="btn" onclick="likePost(${idx})">👍 Like (${p.likes || 0})</button>
-            </div>
-            <input class="reply" id="reply-${idx}" placeholder="เขียนตอบกลับ..." />
-            <div class="row" style="margin-top:6px"><button class="btn" onclick="replyPost(${idx})">ตอบกลับ</button></div>
-            <div class="replies">${replies}</div>
-          </article>
-        \`;
+        const replies = (p.replies || []).map((r) => '<div class="reply-item">' + r + '</div>').join('');
+        const img = p.image ? '<img src="' + p.image + '" alt="post-image" />' : '';
+        return '' +
+          '<article class="post">' +
+            '<div class="post-head">' +
+              '<div class="avatar-sm"></div>' +
+              '<div>' +
+                '<div class="u">' + p.user + '</div>' +
+                '<div class="t">' + new Date(p.at).toLocaleString('th-TH') + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="msg">' + (p.text || '') + img + '</div>' +
+            '<div class="post-actions">' +
+              '<button class="btn" onclick="likePost(' + idx + ')">👍 Like (' + (p.likes || 0) + ')</button>' +
+            '</div>' +
+            '<input class="reply" id="reply-' + idx + '" placeholder="เขียนตอบกลับ..." />' +
+            '<div class="row" style="margin-top:6px"><button class="btn" onclick="replyPost(' + idx + ')">ตอบกลับ</button></div>' +
+            '<div class="replies">' + replies + '</div>' +
+          '</article>';
       }).join('');
     }
 
