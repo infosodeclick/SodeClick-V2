@@ -185,7 +185,7 @@ function profilePage(user, message = '') {
     <main class="card" style="display:grid;gap:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
         <h2 style="margin:0">โปรไฟล์ผู้ใช้</h2>
-        <div style="display:flex;gap:8px"><a class="btn" href="/wallet">Wallet</a><a class="btn" href="/match">Match</a><a class="btn" href="/">หน้าแรก</a><a class="btn" href="/logout">Logout</a></div>
+        <div style="display:flex;gap:8px"><a class="btn" href="/vip">VIP</a><a class="btn" href="/wallet">Wallet</a><a class="btn" href="/match">Match</a><a class="btn" href="/">หน้าแรก</a><a class="btn" href="/logout">Logout</a></div>
       </div>
       ${message ? `<div class="ok">${message}</div>` : ''}
       <section class="card" style="padding:14px;border-radius:12px">
@@ -268,7 +268,7 @@ function renderMatchPage(me, query, info = '') {
         </form>
       </section>
       <section class="grid">${cards || '<div class="muted">ไม่พบผู้ใช้ตามเงื่อนไข</div>'}</section>
-      <section class="card" style="padding:12px;border-radius:12px"><strong>คนที่กดไลก์เรา</strong><div class="muted" style="margin-top:6px">${likedMe.length ? likedMe.map((x) => x.from).join(', ') : 'ยังไม่มี'}</div></section>
+      <section class="card" style="padding:12px;border-radius:12px"><strong>คนที่กดไลก์เรา</strong><div class="muted" style="margin-top:6px">${me.vipStatus ? (likedMe.length ? likedMe.map((x) => x.from).join(', ') : 'ยังไม่มี') : 'ฟีเจอร์นี้สำหรับ VIP'}</div></section>
       <section class="card" style="padding:12px;border-radius:12px"><strong>Match ของฉัน</strong><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">${myMatches.length ? myMatches.map((m) => `<a class=\"btn\" href=\"/chat/${m.id}\">💬 ${m.userA===me.username?m.userB:m.userA}</a>`).join(' ') : '<span class="muted">ยังไม่มี match</span>'}</div></section>
       <section class="card" style="padding:12px;border-radius:12px">
         <strong>Boost Profile</strong>
@@ -310,6 +310,49 @@ function renderChatPage(me, matchId, info = '') {
         <form method="POST" action="/chat/${matchId}/block"><button class="btn" type="submit">⛔ Block</button></form>
         <form method="POST" action="/chat/${matchId}/report"><button class="btn" type="submit">🚩 Report</button></form>
       </div>
+    </main>
+  `);
+}
+
+function renderVipPage(me, info = '') {
+  const plans = [
+    { id: 'vip7', name: 'VIP 7 วัน', price: 99, days: 7 },
+    { id: 'vip1m', name: 'VIP 1 เดือน', price: 299, days: 30 },
+    { id: 'vip3m', name: 'VIP 3 เดือน', price: 699, days: 90 },
+    { id: 'vip1y', name: 'VIP 1 ปี', price: 1990, days: 365 },
+  ];
+
+  const cards = plans.map((p) => `
+    <form method="POST" action="/vip/subscribe" class="card" style="padding:12px;border-radius:12px">
+      <input type="hidden" name="planId" value="${p.id}" />
+      <input type="hidden" name="days" value="${p.days}" />
+      <input type="hidden" name="price" value="${p.price}" />
+      <strong>${p.name}</strong>
+      <div class="muted" style="margin:6px 0">ราคา ${p.price} บาท • ใช้งาน ${p.days} วัน</div>
+      <button class="btn btn-primary" type="submit">สมัครแพ็กเกจนี้</button>
+    </form>
+  `).join('');
+
+  const vipUntilText = me.vipUntil ? new Date(me.vipUntil).toLocaleString('th-TH') : '-';
+
+  return htmlPage('VIP', `
+    <main class="card" style="display:grid;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <h2 style="margin:0">VIP Package</h2>
+        <div style="display:flex;gap:8px"><a class="btn" href="/match">Match</a><a class="btn" href="/wallet">Wallet</a></div>
+      </div>
+      ${info ? `<div class="ok">${info}</div>` : ''}
+      <section class="card" style="padding:12px;border-radius:12px">
+        <div><strong>สถานะปัจจุบัน:</strong> ${me.vipStatus ? 'VIP ✅' : 'Free'}</div>
+        <div class="muted" style="margin-top:4px">VIP หมดอายุ: ${vipUntilText}</div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <span class="ok" style="padding:4px 8px">ดูว่าใครไลก์เรา</span>
+          <span class="ok" style="padding:4px 8px">Like ไม่จำกัด</span>
+          <span class="ok" style="padding:4px 8px">Advanced Filter</span>
+          <span class="ok" style="padding:4px 8px">Badge VIP</span>
+        </div>
+      </section>
+      <section class="grid">${cards}</section>
     </main>
   `);
 }
@@ -634,6 +677,25 @@ const server = http.createServer((req, res) => {
       }
 
       const likes = readJson(likesFile);
+      const users = readJson(usersFile);
+      const meIdx = users.findIndex((u) => u.username === me.username);
+      const today = new Date().toISOString().slice(0, 10);
+      if (meIdx >= 0) {
+        users[meIdx].dailyLikeDate = users[meIdx].dailyLikeDate || today;
+        users[meIdx].dailyLikeCount = users[meIdx].dailyLikeCount || 0;
+        if (users[meIdx].dailyLikeDate !== today) {
+          users[meIdx].dailyLikeDate = today;
+          users[meIdx].dailyLikeCount = 0;
+        }
+        if (!users[meIdx].vipStatus && (type === 'like' || type === 'super_like') && users[meIdx].dailyLikeCount >= 30) {
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end(renderMatchPage(users[meIdx], {}, 'Free จำกัด Like วันละ 30 ครั้ง กรุณาอัปเกรด VIP'));
+          return;
+        }
+        if (type === 'like' || type === 'super_like') users[meIdx].dailyLikeCount += 1;
+        writeJson(usersFile, users);
+      }
+
       likes.unshift({ id: `L${Date.now()}`, from: me.username, to: target, type, at: Date.now() });
       writeJson(likesFile, likes);
 
@@ -813,6 +875,51 @@ const server = http.createServer((req, res) => {
     }
     res.writeHead(302, { Location: '/match' });
     res.end();
+    return;
+  }
+
+  if (url.pathname === '/vip' && req.method === 'GET') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderVipPage(me));
+    return;
+  }
+
+  if (url.pathname === '/vip/subscribe' && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const days = Number(body.days || 0);
+      const price = Number(body.price || 0);
+      const users = readJson(usersFile);
+      const idx = users.findIndex((u) => u.username === me.username);
+      if (idx < 0 || days <= 0) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderVipPage(me, 'แพ็กเกจไม่ถูกต้อง'));
+        return;
+      }
+      users[idx].vipStatus = true;
+      users[idx].vipUntil = Date.now() + days * 24 * 60 * 60 * 1000;
+      users[idx].updatedAt = Date.now();
+      writeJson(usersFile, users);
+      const tx = readJson(coinTxFile);
+      tx.push({ id: `CTX${Date.now()}`, username: me.username, type: 'vip_subscribe', amount: 0, note: `สมัคร VIP ${days} วัน ราคา ${price} บาท`, at: Date.now() });
+      writeJson(coinTxFile, tx);
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderVipPage(users[idx], 'สมัคร VIP สำเร็จ'));
+    });
     return;
   }
 
