@@ -6,6 +6,7 @@ const { handleAuthRoutes } = require('./modules/auth/routes');
 const { handleProfileRoutes } = require('./modules/profile/routes');
 const { handleMatchRoutes } = require('./modules/match/routes');
 const { handleCommerceRoutes } = require('./modules/commerce/routes');
+const { handleChatRoutes } = require('./modules/chat/routes');
 
 const port = process.env.PORT || 3000;
 const dataDir = path.join(__dirname, 'data');
@@ -736,6 +737,10 @@ const server = http.createServer(async (req, res) => {
     pendingFile,
     likesFile,
     matchesFile,
+    messagesFile,
+    giftsFile,
+    reportsFile,
+    blocksFile,
     coinTxFile,
     userSessions,
     renderRegisterPage: registerPage,
@@ -744,9 +749,12 @@ const server = http.createServer(async (req, res) => {
     forgotPasswordPage,
     profilePage,
     renderMatchPage,
+    renderChatPage,
     renderWalletPage,
     renderVipPage,
     renderShopPage,
+    isSpamAction,
+    containsBlockedWords,
     frameTxFile,
     getSessionUser,
     createUserId: () => `USR${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
@@ -755,6 +763,7 @@ const server = http.createServer(async (req, res) => {
   if (await handleAuthRoutes({ req, res, url, deps })) return;
   if (await handleProfileRoutes({ req, res, url, deps })) return;
   if (await handleMatchRoutes({ req, res, url, deps })) return;
+  if (await handleChatRoutes({ req, res, url, deps })) return;
   if (await handleCommerceRoutes({ req, res, url, deps })) return;
 
   if (url.pathname === '/health') {
