@@ -7,6 +7,8 @@ const port = process.env.PORT || 3000;
 const dataDir = path.join(__dirname, 'data');
 const usersFile = path.join(dataDir, 'users.json');
 const pendingFile = path.join(dataDir, 'pending.json');
+const likesFile = path.join(dataDir, 'likes.json');
+const matchesFile = path.join(dataDir, 'matches.json');
 
 const userSessions = new Map(); // sid -> { email, username }
 
@@ -14,6 +16,8 @@ function ensureData() {
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
   if (!fs.existsSync(usersFile)) fs.writeFileSync(usersFile, '[]', 'utf8');
   if (!fs.existsSync(pendingFile)) fs.writeFileSync(pendingFile, '[]', 'utf8');
+  if (!fs.existsSync(likesFile)) fs.writeFileSync(likesFile, '[]', 'utf8');
+  if (!fs.existsSync(matchesFile)) fs.writeFileSync(matchesFile, '[]', 'utf8');
 }
 
 function readJson(file) {
@@ -171,7 +175,7 @@ function profilePage(user, message = '') {
     <main class="card" style="display:grid;gap:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
         <h2 style="margin:0">โปรไฟล์ผู้ใช้</h2>
-        <div style="display:flex;gap:8px"><a class="btn" href="/">หน้าแรก</a><a class="btn" href="/logout">Logout</a></div>
+        <div style="display:flex;gap:8px"><a class="btn" href="/match">Match</a><a class="btn" href="/">หน้าแรก</a><a class="btn" href="/logout">Logout</a></div>
       </div>
       ${message ? `<div class="ok">${message}</div>` : ''}
       <section class="card" style="padding:14px;border-radius:12px">
@@ -196,6 +200,68 @@ function profilePage(user, message = '') {
         <div><label>Bio</label><textarea name="bio" rows="4">${user.bio || ''}</textarea></div>
         <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" type="submit">บันทึกโปรไฟล์</button></div>
       </form>
+    </main>
+  `);
+}
+
+function renderMatchPage(me, query, info = '') {
+  const users = readJson(usersFile).filter((u) => u.username !== me.username);
+  const likes = readJson(likesFile);
+  const matches = readJson(matchesFile);
+
+  const minAge = Number(query.minAge || 18);
+  const maxAge = Number(query.maxAge || 99);
+  const gender = (query.gender || 'all').toLowerCase();
+  const province = (query.province || '').trim().toLowerCase();
+  const goal = (query.goal || 'all').toLowerCase();
+
+  const filtered = users.filter((u) => {
+    if ((u.age || 0) < minAge || (u.age || 0) > maxAge) return false;
+    if (gender !== 'all' && (u.gender || '').toLowerCase() !== gender) return false;
+    if (province && !(u.location || '').toLowerCase().includes(province)) return false;
+    if (goal !== 'all' && (u.relationshipGoal || '').toLowerCase() !== goal) return false;
+    return true;
+  });
+
+  const cards = filtered.map((u) => `
+    <div class="card" style="padding:14px;border-radius:12px">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+        <strong>${u.displayName || u.username}</strong>
+        <span class="muted">${u.location || '-'}</span>
+      </div>
+      <div class="muted" style="margin-top:4px">@${u.username} • ${u.gender || 'other'} • ${u.age || '-'}</div>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <form method="POST" action="/match/action"><input type="hidden" name="target" value="${u.username}"/><input type="hidden" name="type" value="like"/><button class="btn btn-primary" type="submit">❤️ Like</button></form>
+        <form method="POST" action="/match/action"><input type="hidden" name="target" value="${u.username}"/><input type="hidden" name="type" value="super_like"/><button class="btn" type="submit">⭐ Super Like</button></form>
+        <form method="POST" action="/match/action"><input type="hidden" name="target" value="${u.username}"/><input type="hidden" name="type" value="pass"/><button class="btn" type="submit">❌ Pass</button></form>
+      </div>
+    </div>
+  `).join('');
+
+  const likedMe = likes.filter((x) => x.to === me.username && (x.type === 'like' || x.type === 'super_like'));
+  const myMatches = matches.filter((m) => m.userA === me.username || m.userB === me.username);
+
+  return htmlPage('ค้นหาและแมตช์', `
+    <main class="card" style="display:grid;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">ค้นหาและแมตช์</h2><div style="display:flex;gap:8px"><a class="btn" href="/profile">โปรไฟล์</a><a class="btn" href="/logout">Logout</a></div></div>
+      ${info ? `<div class="ok">${info}</div>` : ''}
+      <section class="card" style="padding:12px;border-radius:12px">
+        <form method="GET" action="/match" class="grid">
+          <div><label>อายุต่ำสุด</label><input type="number" name="minAge" value="${minAge}"/></div>
+          <div><label>อายุสูงสุด</label><input type="number" name="maxAge" value="${maxAge}"/></div>
+          <div><label>เพศ</label><select name="gender"><option value="all" ${gender==='all'?'selected':''}>all</option><option value="male" ${gender==='male'?'selected':''}>male</option><option value="female" ${gender==='female'?'selected':''}>female</option><option value="other" ${gender==='other'?'selected':''}>other</option></select></div>
+          <div><label>จังหวัด</label><input name="province" value="${query.province || ''}"/></div>
+          <div><label>เป้าหมาย</label><select name="goal"><option value="all" ${goal==='all'?'selected':''}>all</option><option value="friend" ${goal==='friend'?'selected':''}>friend</option><option value="dating" ${goal==='dating'?'selected':''}>dating</option><option value="serious" ${goal==='serious'?'selected':''}>serious</option></select></div>
+          <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" type="submit">ค้นหา</button></div>
+        </form>
+      </section>
+      <section class="grid">${cards || '<div class="muted">ไม่พบผู้ใช้ตามเงื่อนไข</div>'}</section>
+      <section class="card" style="padding:12px;border-radius:12px"><strong>คนที่กดไลก์เรา</strong><div class="muted" style="margin-top:6px">${likedMe.length ? likedMe.map((x) => x.from).join(', ') : 'ยังไม่มี'}</div></section>
+      <section class="card" style="padding:12px;border-radius:12px"><strong>Match ของฉัน</strong><div class="muted" style="margin-top:6px">${myMatches.length ? myMatches.map((m) => m.userA===me.username?m.userB:m.userA).join(', ') : 'ยังไม่มี match'}</div></section>
+      <section class="card" style="padding:12px;border-radius:12px">
+        <strong>Boost Profile</strong>
+        <form method="POST" action="/match/boost" style="margin-top:8px"><button class="btn btn-primary" type="submit">🚀 Boost โปรไฟล์ (demo)</button></form>
+      </section>
     </main>
   `);
 }
@@ -446,6 +512,80 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(forgotPasswordPage('', `รีเซ็ตสำเร็จ (demo) รหัสใหม่: ${temp}`));
     });
+    return;
+  }
+
+  if (url.pathname === '/match' && req.method === 'GET') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    const query = Object.fromEntries(url.searchParams.entries());
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderMatchPage(me, query));
+    return;
+  }
+
+  if (url.pathname === '/match/action' && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const target = String(body.target || '').trim();
+      const type = String(body.type || 'like').trim();
+      if (!target || target === me.username) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderMatchPage(me, {}, 'ข้อมูลไม่ถูกต้อง'));
+        return;
+      }
+
+      const likes = readJson(likesFile);
+      likes.unshift({ id: `L${Date.now()}`, from: me.username, to: target, type, at: Date.now() });
+      writeJson(likesFile, likes);
+
+      let info = `ส่ง ${type} ไปยัง ${target} แล้ว`;
+      if (type !== 'pass') {
+        const reciprocal = likes.find((x) => x.from === target && x.to === me.username && (x.type === 'like' || x.type === 'super_like'));
+        if (reciprocal) {
+          const matches = readJson(matchesFile);
+          const exists = matches.find((m) => [m.userA, m.userB].sort().join('|') === [me.username, target].sort().join('|'));
+          if (!exists) {
+            matches.unshift({ id: `M${Date.now()}`, userA: me.username, userB: target, at: Date.now() });
+            writeJson(matchesFile, matches);
+          }
+          info = `🎉 Match สำเร็จกับ ${target}`;
+        }
+      }
+
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderMatchPage(me, {}, info));
+    });
+    return;
+  }
+
+  if (url.pathname === '/match/boost' && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    const users = readJson(usersFile);
+    const idx = users.findIndex((u) => u.email === me.email || u.username === me.username);
+    if (idx >= 0) {
+      users[idx].boostUntil = Date.now() + 30 * 60 * 1000;
+      writeJson(usersFile, users);
+    }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderMatchPage(users[idx] || me, {}, 'Boost โปรไฟล์แล้ว (30 นาที demo)'));
     return;
   }
 
