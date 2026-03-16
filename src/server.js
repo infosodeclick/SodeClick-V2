@@ -322,7 +322,7 @@ function renderUserApp(session) {
   return htmlPage('หน้าบ้าน - SodeClick V2', `
     <style>
       .social-wrap { display:grid; gap:12px; }
-      .composer-box { border:1px solid #e5e7eb; border-radius:12px; background:#fff; overflow:hidden; }
+      .composer-box { border:1px solid #e5e7eb; border-radius:12px; background:#fff; overflow:visible; }
       .composer-head { padding:10px 12px; border-bottom:1px solid #eef2f7; color:#64748b; font-weight:700; }
       .composer-body { padding:10px 12px; }
       .composer-input { width:100%; min-height:92px; border:1px solid #d1d5db; border-radius:10px; padding:10px; resize:vertical; font-family:inherit; }
