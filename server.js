@@ -15,6 +15,7 @@ const reportsFile = path.join(dataDir, 'reports.json');
 const giftsFile = path.join(dataDir, 'gift-transactions.json');
 const coinTxFile = path.join(dataDir, 'coin-transactions.json');
 const frameTxFile = path.join(dataDir, 'frame-transactions.json');
+const boardPostsFile = path.join(dataDir, 'board-posts.json');
 
 const userSessions = new Map(); // sid -> { email, username }
 
@@ -30,6 +31,7 @@ function ensureData() {
   if (!fs.existsSync(giftsFile)) fs.writeFileSync(giftsFile, '[]', 'utf8');
   if (!fs.existsSync(coinTxFile)) fs.writeFileSync(coinTxFile, '[]', 'utf8');
   if (!fs.existsSync(frameTxFile)) fs.writeFileSync(frameTxFile, '[]', 'utf8');
+  if (!fs.existsSync(boardPostsFile)) fs.writeFileSync(boardPostsFile, '[]', 'utf8');
 }
 
 function readJson(file) {
@@ -187,7 +189,7 @@ function profilePage(user, message = '') {
     <main class="card" style="display:grid;gap:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
         <h2 style="margin:0">โปรไฟล์ผู้ใช้</h2>
-        <div style="display:flex;gap:8px"><a class="btn" href="/vip">VIP</a><a class="btn" href="/wallet">Wallet</a><a class="btn" href="/match">Match</a><a class="btn" href="/">หน้าแรก</a><a class="btn" href="/logout">Logout</a></div>
+        <div style="display:flex;gap:8px"><a class="btn" href="/board">Webboard</a><a class="btn" href="/vip">VIP</a><a class="btn" href="/wallet">Wallet</a><a class="btn" href="/match">Match</a><a class="btn" href="/">หน้าแรก</a><a class="btn" href="/logout">Logout</a></div>
       </div>
       ${message ? `<div class="ok">${message}</div>` : ''}
       <section class="card" style="padding:14px;border-radius:12px">
@@ -312,6 +314,79 @@ function renderChatPage(me, matchId, info = '') {
         <form method="POST" action="/chat/${matchId}/block"><button class="btn" type="submit">⛔ Block</button></form>
         <form method="POST" action="/chat/${matchId}/report"><button class="btn" type="submit">🚩 Report</button></form>
       </div>
+    </main>
+  `);
+}
+
+function renderBoardPage(me, q = {}, info = '') {
+  const category = (q.category || 'all').trim();
+  const search = (q.search || '').trim().toLowerCase();
+  const posts = readJson(boardPostsFile);
+
+  const filtered = posts
+    .filter((p) => (category === 'all' ? true : p.category === category))
+    .filter((p) => (search ? (p.title + ' ' + p.content).toLowerCase().includes(search) : true))
+    .sort((a, b) => (b.pinned === a.pinned ? b.createdAt - a.createdAt : (b.pinned ? 1 : -1)));
+
+  const categories = ['general', 'dating', 'friend', 'tips', 'event'];
+
+  const rows = filtered.map((p) => {
+    const comments = Array.isArray(p.comments) ? p.comments : [];
+    const commentsHtml = comments.map((c) => `<div class="muted" style="margin-top:6px">• ${c.by}: ${c.text}</div>`).join('');
+    return `
+      <article class="card" style="padding:12px;border-radius:12px">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap">
+          <strong>${p.pinned ? '📌 ' : ''}${p.title}</strong>
+          <span class="muted">${p.category}</span>
+        </div>
+        <div class="muted" style="margin-top:4px">โดย ${p.author} • ${new Date(p.createdAt).toLocaleString('th-TH')}</div>
+        <div style="margin-top:8px">${p.content}</div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <form method="POST" action="/board/like"><input type="hidden" name="postId" value="${p.id}"/><button class="btn" type="submit">👍 Like (${p.likes || 0})</button></form>
+          <form method="POST" action="/board/report"><input type="hidden" name="postId" value="${p.id}"/><button class="btn" type="submit">🚩 Report</button></form>
+          ${me.username === 'admin' ? `<form method="POST" action="/board/pin"><input type="hidden" name="postId" value="${p.id}"/><button class="btn" type="submit">${p.pinned ? 'ยกเลิกปักหมุด' : 'ปักหมุด'}</button></form>` : ''}
+        </div>
+        <form method="POST" action="/board/comment" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <input type="hidden" name="postId" value="${p.id}"/>
+          <input name="comment" placeholder="คอมเมนต์..." style="flex:1"/>
+          <button class="btn" type="submit">ส่งคอมเมนต์</button>
+        </form>
+        <div style="margin-top:8px">${commentsHtml}</div>
+      </article>
+    `;
+  }).join('');
+
+  const categoryOptions = categories.map((c) => `<option value="${c}" ${category === c ? 'selected' : ''}>${c}</option>`).join('');
+
+  return htmlPage('Webboard', `
+    <main class="card" style="display:grid;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <h2 style="margin:0">เว็บบอร์ด</h2>
+        <div style="display:flex;gap:8px"><a class="btn" href="/profile">โปรไฟล์</a><a class="btn" href="/match">Match</a><a class="btn" href="/logout">Logout</a></div>
+      </div>
+      ${info ? `<div class="ok">${info}</div>` : ''}
+
+      <section class="card" style="padding:12px;border-radius:12px">
+        <form method="GET" action="/board" class="grid">
+          <div><label>หมวดหมู่</label><select name="category"><option value="all">all</option>${categoryOptions}</select></div>
+          <div><label>ค้นหา</label><input name="search" value="${q.search || ''}" placeholder="ค้นหากระทู้..."/></div>
+          <div style="display:flex;align-items:flex-end"><button class="btn btn-primary" type="submit">ค้นหา</button></div>
+        </form>
+      </section>
+
+      <section class="card" style="padding:12px;border-radius:12px">
+        <strong>ตั้งกระทู้ใหม่</strong>
+        <form method="POST" action="/board/new" style="display:grid;gap:8px;margin-top:8px">
+          <div class="grid">
+            <div><label>หัวข้อ</label><input name="title" required/></div>
+            <div><label>หมวดหมู่</label><select name="category">${categoryOptions}</select></div>
+          </div>
+          <div><label>เนื้อหา</label><textarea name="content" rows="4" required></textarea></div>
+          <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" type="submit">โพสต์กระทู้</button></div>
+        </form>
+      </section>
+
+      <section style="display:grid;gap:10px">${rows || '<div class="muted">ยังไม่มีกระทู้</div>'}</section>
     </main>
   `);
 }
@@ -1087,6 +1162,129 @@ const server = http.createServer((req, res) => {
     }
     res.writeHead(302, { Location: '/login' });
     res.end();
+    return;
+  }
+
+  if (url.pathname === '/board' && req.method === 'GET') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    const query = Object.fromEntries(url.searchParams.entries());
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderBoardPage(me, query));
+    return;
+  }
+
+  if (url.pathname === '/board/new' && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const title = String(body.title || '').trim();
+      const content = String(body.content || '').trim();
+      const category = String(body.category || 'general').trim();
+      if (!title || !content) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderBoardPage(me, {}, 'กรอกหัวข้อและเนื้อหาให้ครบ'));
+        return;
+      }
+      const posts = readJson(boardPostsFile);
+      posts.push({ id: `P${Date.now()}`, author: me.username, title, content, category, likes: 0, comments: [], reports: 0, pinned: false, createdAt: Date.now() });
+      writeJson(boardPostsFile, posts);
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderBoardPage(me, {}, 'โพสต์กระทู้สำเร็จ'));
+    });
+    return;
+  }
+
+  if (url.pathname === '/board/comment' && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) { res.writeHead(302, { Location: '/login' }); res.end(); return; }
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const postId = String(body.postId || '').trim();
+      const comment = String(body.comment || '').trim();
+      const posts = readJson(boardPostsFile);
+      const idx = posts.findIndex((p) => p.id === postId);
+      if (idx >= 0 && comment) {
+        posts[idx].comments = Array.isArray(posts[idx].comments) ? posts[idx].comments : [];
+        posts[idx].comments.push({ by: me.username, text: comment, at: Date.now() });
+        writeJson(boardPostsFile, posts);
+      }
+      res.writeHead(302, { Location: '/board' });
+      res.end();
+    });
+    return;
+  }
+
+  if (url.pathname === '/board/like' && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) { res.writeHead(302, { Location: '/login' }); res.end(); return; }
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const postId = String(body.postId || '').trim();
+      const posts = readJson(boardPostsFile);
+      const idx = posts.findIndex((p) => p.id === postId);
+      if (idx >= 0) {
+        posts[idx].likes = (posts[idx].likes || 0) + 1;
+        writeJson(boardPostsFile, posts);
+      }
+      res.writeHead(302, { Location: '/board' });
+      res.end();
+    });
+    return;
+  }
+
+  if (url.pathname === '/board/report' && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) { res.writeHead(302, { Location: '/login' }); res.end(); return; }
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const postId = String(body.postId || '').trim();
+      const posts = readJson(boardPostsFile);
+      const idx = posts.findIndex((p) => p.id === postId);
+      if (idx >= 0) {
+        posts[idx].reports = (posts[idx].reports || 0) + 1;
+        writeJson(boardPostsFile, posts);
+      }
+      res.writeHead(302, { Location: '/board' });
+      res.end();
+    });
+    return;
+  }
+
+  if (url.pathname === '/board/pin' && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me || me.username !== 'admin') { res.writeHead(302, { Location: '/board' }); res.end(); return; }
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const postId = String(body.postId || '').trim();
+      const posts = readJson(boardPostsFile);
+      const idx = posts.findIndex((p) => p.id === postId);
+      if (idx >= 0) {
+        posts[idx].pinned = !posts[idx].pinned;
+        writeJson(boardPostsFile, posts);
+      }
+      res.writeHead(302, { Location: '/board' });
+      res.end();
+    });
     return;
   }
 
