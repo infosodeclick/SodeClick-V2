@@ -45,6 +45,8 @@ const giftCatalog = [
   { id: 'G005', name: 'แหวน', coinPrice: 500, emoji: '💍' },
 ];
 const giftTransactions = [];
+const userReports = []; // {id,reporter,target,reason,at}
+const userBlocks = []; // {id,owner,target,at}
 
 const dataDir = path.join(__dirname, '..', 'data');
 const stateFile = path.join(dataDir, 'app-state.json');
@@ -65,6 +67,8 @@ function saveAppState() {
     matches,
     chats: Array.from(chats.entries()),
     giftTransactions,
+    userReports,
+    userBlocks,
     updatedAt: new Date().toISOString(),
   };
   fs.writeFileSync(stateFile, JSON.stringify(payload, null, 2), 'utf8');
@@ -112,6 +116,8 @@ function loadAppState() {
     }
 
     if (Array.isArray(parsed.giftTransactions)) parsed.giftTransactions.forEach((x) => giftTransactions.push(x));
+    if (Array.isArray(parsed.userReports)) parsed.userReports.forEach((x) => userReports.push(x));
+    if (Array.isArray(parsed.userBlocks)) parsed.userBlocks.forEach((x) => userBlocks.push(x));
   } catch (err) {
     console.error('[state-load-error]', err.message);
   }
@@ -937,7 +943,8 @@ function renderEarningsPage(session, profile, message = '') {
 
 function renderMatchPage(session, message = '', category = 'new') {
   const me = Array.from(registeredUsers.values()).find((u) => u.username === session.username) || {};
-  const allUsers = getAllDatingUsers().filter((u) => u.username !== session.username);
+  const blocked = new Set(userBlocks.filter((b) => b.owner === session.username).map((b) => b.target));
+  const allUsers = getAllDatingUsers().filter((u) => u.username !== session.username && !blocked.has(u.username));
 
   const byCategory = {
     nearby: [...allUsers].sort((a, b) => String(a.location || '').localeCompare(String(b.location || ''))),
@@ -966,6 +973,8 @@ function renderMatchPage(session, message = '', category = 'new') {
         <form method="POST" action="/app/match/action"><input type="hidden" name="to" value="${u.username}" /><input type="hidden" name="type" value="like" /><button class="btn btn-primary" type="submit">❤️ Like</button></form>
         <form method="POST" action="/app/match/action"><input type="hidden" name="to" value="${u.username}" /><input type="hidden" name="type" value="pass" /><button class="btn" type="submit">❌ Pass</button></form>
         <form method="POST" action="/app/match/action"><input type="hidden" name="to" value="${u.username}" /><input type="hidden" name="type" value="super_like" /><button class="btn" type="submit">⭐ Super Like</button></form>
+        <form method="POST" action="/app/block"><input type="hidden" name="target" value="${u.username}" /><button class="btn" type="submit">⛔ Block</button></form>
+        <form method="POST" action="/app/report"><input type="hidden" name="target" value="${u.username}" /><input type="hidden" name="reason" value="abuse" /><button class="btn" type="submit">🚩 Report</button></form>
       </div>
     </div>
   `).join('');
@@ -1492,6 +1501,9 @@ function renderActivitiesPage(session) {
   const rows = earningsLedger.slice(0, 20)
     .map((e) => `<tr><td>${e.at.toLocaleString('th-TH')}</td><td>${e.username}</td><td>${e.type}</td><td>${e.note}</td></tr>`)
     .join('');
+  const reportRows = userReports.slice(0, 20)
+    .map((r) => `<tr><td>${new Date(r.at).toLocaleString('th-TH')}</td><td>${r.reporter}</td><td>${r.target}</td><td>${r.reason}</td></tr>`)
+    .join('');
 
   return htmlPage('Activities - Admin', adminShell(session, 'activities', `
     <main class="card" style="display:grid;gap:12px">
@@ -1504,6 +1516,7 @@ function renderActivitiesPage(session) {
         <div class="stat"><div class="k">Match ทั้งหมด</div><div class="v">${matches.length}</div></div>
         <div class="stat"><div class="k">ห้องแชท</div><div class="v">${Array.from(chats.keys()).length}</div></div>
         <div class="stat"><div class="k">Gift ที่ส่ง</div><div class="v">${giftTransactions.length}</div></div>
+        <div class="stat"><div class="k">รายงานผู้ใช้</div><div class="v">${userReports.length}</div></div>
       </section>
       <section class="stat" style="padding:0;overflow:hidden">
         <div style="padding:12px 12px 0"><strong>กิจกรรมจากระบบรายได้/ร้านค้า</strong></div>
@@ -1511,6 +1524,16 @@ function renderActivitiesPage(session) {
           <table>
             <thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>ประเภท</th><th>รายละเอียด</th></tr></thead>
             <tbody>${rows || '<tr><td colspan="4">ยังไม่มีกิจกรรม</td></tr>'}</tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="stat" style="padding:0;overflow:hidden">
+        <div style="padding:12px 12px 0"><strong>รายการ Report ผู้ใช้</strong></div>
+        <div style="overflow:auto;padding:8px 12px 12px">
+          <table>
+            <thead><tr><th>เวลา</th><th>ผู้รายงาน</th><th>เป้าหมาย</th><th>เหตุผล</th></tr></thead>
+            <tbody>${reportRows || '<tr><td colspan="4">ยังไม่มีรายงาน</td></tr>'}</tbody>
           </table>
         </div>
       </section>
@@ -1739,6 +1762,42 @@ const server = http.createServer(async (req, res) => {
     saveAppState();
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(renderMatchPage(userSession, type === 'pass' ? `ข้าม ${to}` : `ส่ง ${type} ให้ ${to} แล้ว`));
+    return;
+  }
+
+  if (path === '/app/block' && req.method === 'POST') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const body = await parseBody(req);
+    const target = (body.target || '').trim();
+    if (!target || target === userSession.username) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderMatchPage(userSession, 'ข้อมูล Block ไม่ถูกต้อง'));
+      return;
+    }
+    const existed = userBlocks.find((b) => b.owner === userSession.username && b.target === target);
+    if (!existed) userBlocks.unshift({ id: crypto.randomBytes(4).toString('hex'), owner: userSession.username, target, at: new Date() });
+    saveAppState();
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderMatchPage(userSession, `บล็อก ${target} แล้ว`));
+    return;
+  }
+
+  if (path === '/app/report' && req.method === 'POST') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const body = await parseBody(req);
+    const target = (body.target || '').trim();
+    const reason = (body.reason || 'abuse').trim();
+    if (!target || target === userSession.username) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderMatchPage(userSession, 'ข้อมูล Report ไม่ถูกต้อง'));
+      return;
+    }
+    userReports.unshift({ id: crypto.randomBytes(4).toString('hex'), reporter: userSession.username, target, reason, at: new Date() });
+    saveAppState();
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderMatchPage(userSession, `ส่งรายงาน ${target} แล้ว`));
     return;
   }
 
