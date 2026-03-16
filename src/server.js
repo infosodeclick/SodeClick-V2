@@ -349,6 +349,12 @@ function renderUserApp(session) {
   return htmlPage('หน้าบ้าน - SodeClick V2', `
     <style>
       .social-wrap { display:grid; gap:12px; }
+      .board-topbar { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; border-radius:12px; background:#fff; border:1px solid #e5e7eb; }
+      .board-title { font-weight:800; font-size:18px; }
+      .top-actions { display:flex; gap:8px; }
+      .top-btn { border:0; border-radius:10px; color:#fff; padding:8px 12px; font-weight:700; text-decoration:none; }
+      .top-btn.logout { background:#111827; }
+      .top-btn.profile { background:#16a34a; }
       .composer-box { border:1px solid #e5e7eb; border-radius:12px; background:#fff; overflow:visible; }
       .composer-head { padding:10px 12px; border-bottom:1px solid #eef2f7; color:#64748b; font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:10px; }
       .composer-body { padding:10px 12px; }
@@ -375,9 +381,12 @@ function renderUserApp(session) {
     </style>
 
     <main class="card social-wrap">
-      <div class="head">
-        <h2 style="margin:0">กระดานโต้ตอบ</h2>
-        <a class="btn" href="/logout">ออกจากระบบ</a>
+      <div class="board-topbar">
+        <div class="board-title">บอร์ด</div>
+        <div class="top-actions">
+          <a class="top-btn profile" href="/app?tab=profile">โปรไฟล์</a>
+          <a class="top-btn logout" href="/logout">Logout</a>
+        </div>
       </div>
 
       <div class="composer-box">
