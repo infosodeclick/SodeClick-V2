@@ -355,9 +355,11 @@ function renderUserApp(session) {
       .board-tab:hover { background:rgba(255,255,255,.15); }
       .board-tab.active { background:rgba(255,255,255,.2); color:#fff; border-radius:10px; margin:6px; border-right:0; }
       .top-actions { display:flex; align-items:center; gap:8px; padding:8px; }
-      .top-btn { border:0; border-radius:10px; color:#fff; padding:8px 12px; font-weight:700; text-decoration:none; box-shadow:0 4px 10px rgba(96,165,250,.2); background:linear-gradient(135deg,#60a5fa,#f9a8d4); }
-      .top-btn.logout { background:linear-gradient(135deg,#60a5fa,#f9a8d4); }
-      .top-btn.profile { background:linear-gradient(135deg,#60a5fa,#f9a8d4); }
+      .top-btn { border:1px solid rgba(255,255,255,.35); border-radius:12px; color:#fff; padding:8px 14px; font-weight:700; text-decoration:none; box-shadow:0 6px 14px rgba(37,99,235,.22); transition:transform .16s ease, box-shadow .16s ease, filter .16s ease; backdrop-filter: blur(2px); }
+      .top-btn:hover { transform:translateY(-1px); box-shadow:0 10px 20px rgba(30,64,175,.25); filter:brightness(1.04); }
+      .top-btn:active { transform:translateY(0); }
+      .top-btn.profile { background:linear-gradient(135deg,#22c55e,#16a34a); border-color:rgba(255,255,255,.28); }
+      .top-btn.logout { background:linear-gradient(135deg,#475569,#334155); border-color:rgba(255,255,255,.22); }
       .composer-box { border:1px solid #e5e7eb; border-radius:12px; background:#fff; overflow:visible; }
       .composer-head { padding:10px 12px; border-bottom:1px solid #eef2f7; color:#64748b; font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:10px; }
       .composer-body { padding:10px 12px; }
@@ -403,8 +405,8 @@ function renderUserApp(session) {
           <a class="board-tab" href="/app?tab=games">🎮 เกมส์</a>
         </nav>
         <div class="top-actions">
-          <a class="top-btn profile" href="/app?tab=profile">โปรไฟล์</a>
-          <a class="top-btn logout" href="/logout">Logout</a>
+          <a class="top-btn profile" href="/app?tab=profile">👤 โปรไฟล์</a>
+          <a class="top-btn logout" href="/logout">⎋ Logout</a>
         </div>
       </div>
 
