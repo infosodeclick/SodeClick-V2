@@ -349,14 +349,15 @@ function renderUserApp(session) {
   return htmlPage('หน้าบ้าน - SodeClick V2', `
     <style>
       .social-wrap { display:grid; gap:12px; }
-      .board-topbar { display:flex; justify-content:space-between; align-items:stretch; gap:10px; padding:0; border-radius:12px; background:#2f86c7; border:1px solid #2a7dbb; overflow:hidden; }
+      .board-topbar { display:flex; justify-content:space-between; align-items:stretch; gap:10px; padding:0; border-radius:14px; background:linear-gradient(135deg,#60a5fa,#93c5fd); border:1px solid #bfdbfe; overflow:hidden; box-shadow:0 8px 20px rgba(59,130,246,.14); }
       .board-nav { display:flex; align-items:center; overflow:auto; }
-      .board-tab { color:#e9f4ff; text-decoration:none; padding:14px 18px; font-weight:700; display:flex; align-items:center; gap:8px; white-space:nowrap; border-right:1px solid rgba(255,255,255,.12); }
-      .board-tab.active { background:#ffffff; color:#2f86c7; }
+      .board-tab { color:#eff6ff; text-decoration:none; padding:13px 16px; font-weight:700; display:flex; align-items:center; gap:8px; white-space:nowrap; border-right:1px solid rgba(255,255,255,.2); transition:.2s ease; }
+      .board-tab:hover { background:rgba(255,255,255,.12); }
+      .board-tab.active { background:#ffffff; color:#2563eb; border-radius:10px; margin:6px; border-right:0; }
       .top-actions { display:flex; align-items:center; gap:8px; padding:8px; }
-      .top-btn { border:0; border-radius:10px; color:#fff; padding:8px 12px; font-weight:700; text-decoration:none; }
-      .top-btn.logout { background:#111827; }
-      .top-btn.profile { background:#16a34a; }
+      .top-btn { border:0; border-radius:10px; color:#fff; padding:8px 12px; font-weight:700; text-decoration:none; box-shadow:0 4px 10px rgba(0,0,0,.12); }
+      .top-btn.logout { background:#1f2937; }
+      .top-btn.profile { background:linear-gradient(135deg,#22c55e,#16a34a); }
       .composer-box { border:1px solid #e5e7eb; border-radius:12px; background:#fff; overflow:visible; }
       .composer-head { padding:10px 12px; border-bottom:1px solid #eef2f7; color:#64748b; font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:10px; }
       .composer-body { padding:10px 12px; }
