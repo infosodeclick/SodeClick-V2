@@ -37,6 +37,14 @@ const pendingVerifications = new Map();
 const userLikes = []; // {from,to,type,at}
 const matches = []; // {id,userA,userB,at}
 const chats = new Map(); // matchId -> [{sender,text,at}]
+const giftCatalog = [
+  { id: 'G001', name: 'ดอกไม้', coinPrice: 10, emoji: '🌹' },
+  { id: 'G002', name: 'หัวใจ', coinPrice: 20, emoji: '❤️' },
+  { id: 'G003', name: 'ช็อกโกแลต', coinPrice: 50, emoji: '🍫' },
+  { id: 'G004', name: 'ตุ๊กตา', coinPrice: 100, emoji: '🧸' },
+  { id: 'G005', name: 'แหวน', coinPrice: 500, emoji: '💍' },
+];
+const giftTransactions = [];
 
 const dataDir = path.join(__dirname, '..', 'data');
 const stateFile = path.join(dataDir, 'app-state.json');
@@ -56,6 +64,7 @@ function saveAppState() {
     userLikes,
     matches,
     chats: Array.from(chats.entries()),
+    giftTransactions,
     updatedAt: new Date().toISOString(),
   };
   fs.writeFileSync(stateFile, JSON.stringify(payload, null, 2), 'utf8');
@@ -101,6 +110,8 @@ function loadAppState() {
     if (Array.isArray(parsed.chats)) {
       for (const [k, v] of parsed.chats) chats.set(k, Array.isArray(v) ? v : []);
     }
+
+    if (Array.isArray(parsed.giftTransactions)) parsed.giftTransactions.forEach((x) => giftTransactions.push(x));
   } catch (err) {
     console.error('[state-load-error]', err.message);
   }
@@ -201,6 +212,8 @@ function getOrCreateUserProfile(session) {
       interests: 'เพลง, แชท, เกม',
       coins: 50,
       membership: 'M_FREE',
+      vipStatus: false,
+      startedChatsByDate: {},
       framesOwned: ['F001'],
       activeFrame: 'F001',
       updatedAt: new Date(),
@@ -964,11 +977,13 @@ function renderChatPage(session, matchId, message = '') {
   const partner = match.userA === session.username ? match.userB : match.userA;
   const msgs = chats.get(match.id) || [];
   const rows = msgs.slice(-60).map((x) => `<div class="stat" style="margin-bottom:8px;background:${x.sender===session.username?'#eff6ff':'#fff'}"><strong>${x.sender}</strong> <span class="muted">${new Date(x.at).toLocaleString('th-TH')}</span><div style="margin-top:6px">${x.text}</div></div>`).join('');
+  const giftButtons = giftCatalog.map((g) => `<form method="POST" action="/app/chat/${match.id}/gift" style="display:inline-block"><input type="hidden" name="giftId" value="${g.id}" /><button class="btn" type="submit">${g.emoji} ${g.name} (${g.coinPrice})</button></form>`).join(' ');
   return htmlPage('Chat - SodeClick V2', `
     <main class="card" style="display:grid;gap:12px">
       <div class="head"><h2 style="margin:0">แชทกับ ${partner}</h2><a class="btn" href="/app/match">กลับ Match</a></div>
       ${message ? `<div class="stat" style="border-color:#86efac;background:#f0fdf4;color:#166534">${message}</div>` : ''}
       <section>${rows || '<div class="stat">ยังไม่มีข้อความ</div>'}</section>
+      <section class="stat"><strong>ส่งของขวัญ</strong><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">${giftButtons}</div></section>
       <form method="POST" action="/app/chat/${match.id}" style="display:grid;gap:8px">
         <textarea name="message" style="width:100%;min-height:80px;border:1px solid #d1d5db;border-radius:10px;padding:10px" placeholder="พิมพ์ข้อความ..."></textarea>
         <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" type="submit">ส่งข้อความ</button></div>
@@ -1460,6 +1475,12 @@ function renderActivitiesPage(session) {
         <h2 style="margin:0">กิจกรรมระบบ</h2>
         <a class="btn" href="/admin/audit">ดู Audit Log</a>
       </div>
+      <section class="grid">
+        <div class="stat"><div class="k">Like ทั้งหมด</div><div class="v">${userLikes.length}</div></div>
+        <div class="stat"><div class="k">Match ทั้งหมด</div><div class="v">${matches.length}</div></div>
+        <div class="stat"><div class="k">ห้องแชท</div><div class="v">${Array.from(chats.keys()).length}</div></div>
+        <div class="stat"><div class="k">Gift ที่ส่ง</div><div class="v">${giftTransactions.length}</div></div>
+      </section>
       <section class="stat" style="padding:0;overflow:hidden">
         <div style="padding:12px 12px 0"><strong>กิจกรรมจากระบบรายได้/ร้านค้า</strong></div>
         <div style="overflow:auto;padding:8px 12px 12px">
@@ -1666,7 +1687,24 @@ const server = http.createServer(async (req, res) => {
 
     const otherLiked = userLikes.find((x) => x.from === to && x.to === userSession.username && (x.type === 'like' || x.type === 'super_like'));
     if (type !== 'pass' && otherLiked) {
-      const m = ensureMatch(userSession.username, to);
+      const profile = getOrCreateUserProfile(userSession);
+      const today = new Date().toISOString().slice(0, 10);
+      profile.startedChatsByDate = profile.startedChatsByDate || {};
+
+      const existing = matches.find((m) => [m.userA, m.userB].sort().join('|') === [userSession.username, to].sort().join('|'));
+      if (!existing) {
+        if (!profile.vipStatus) {
+          const used = profile.startedChatsByDate[today] || 0;
+          if (used >= 10) {
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(renderMatchPage(userSession, 'Free user เริ่มแชทได้ 10 คน/วัน กรุณาอัปเกรด VIP'));
+            return;
+          }
+          profile.startedChatsByDate[today] = used + 1;
+        }
+      }
+
+      ensureMatch(userSession.username, to);
       saveAppState();
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(renderMatchPage(userSession, `🎉 Match สำเร็จกับ ${to} แล้ว`));
@@ -1710,6 +1748,35 @@ const server = http.createServer(async (req, res) => {
     saveAppState();
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(renderChatPage(userSession, matchId, 'ส่งข้อความสำเร็จ'));
+    return;
+  }
+
+  if (path.startsWith('/app/chat/') && path.endsWith('/gift') && req.method === 'POST') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const matchId = path.replace('/app/chat/', '').replace('/gift', '').trim();
+    const body = await parseBody(req);
+    const gift = giftCatalog.find((g) => g.id === body.giftId);
+    const match = matches.find((m) => m.id === matchId && (m.userA === userSession.username || m.userB === userSession.username));
+    if (!match || !gift) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderMatchPage(userSession, 'ไม่พบข้อมูลของขวัญหรือห้องแชท'));
+      return;
+    }
+    const profile = getOrCreateUserProfile(userSession);
+    if ((profile.coins || 0) < gift.coinPrice) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderChatPage(userSession, matchId, 'เหรียญไม่พอสำหรับส่งของขวัญ'));
+      return;
+    }
+    profile.coins -= gift.coinPrice;
+    if (!chats.has(matchId)) chats.set(matchId, []);
+    chats.get(matchId).push({ sender: userSession.username, text: `ส่งของขวัญ ${gift.emoji} ${gift.name}`, at: new Date().toISOString() });
+    giftTransactions.unshift({ id: crypto.randomBytes(4).toString('hex'), matchId, from: userSession.username, giftId: gift.id, price: gift.coinPrice, at: new Date() });
+    earningsLedger.unshift({ username: userSession.username, type: 'gift_send', amount: -gift.coinPrice, note: `ส่งของขวัญ ${gift.name}`, at: new Date() });
+    saveAppState();
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderChatPage(userSession, matchId, `ส่งของขวัญ ${gift.name} สำเร็จ`));
     return;
   }
 
@@ -1803,6 +1870,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     profile.membership = plan.id;
+    profile.vipStatus = plan.id !== 'M_FREE';
     profile.coins = (profile.coins || 0) + plan.coins;
     profile.updatedAt = new Date();
     earningsLedger.unshift({ username: userSession.username, type: 'membership_subscribe', amount: plan.coins, note: `สมัคร ${plan.name}`, at: new Date() });
