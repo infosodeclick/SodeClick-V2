@@ -2,6 +2,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { handleAuthRoutes } = require('./modules/auth/routes');
+const { handleProfileRoutes } = require('./modules/profile/routes');
 
 const port = process.env.PORT || 3000;
 const dataDir = path.join(__dirname, 'data');
@@ -103,6 +105,14 @@ function parseForm(body) {
       out[decodeURIComponent(k || '')] = decodeURIComponent((v || '').replace(/\+/g, ' '));
     });
   return out;
+}
+
+function parseBody(req) {
+  return new Promise((resolve) => {
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => resolve(raw));
+  });
 }
 
 function parseCookies(req) {
@@ -711,8 +721,29 @@ function getSessionUser(req) {
 
 ensureData();
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${port}`);
+
+  const deps = {
+    parseForm,
+    parseBody,
+    parseCookies,
+    readJson,
+    writeJson,
+    usersFile,
+    pendingFile,
+    userSessions,
+    renderRegisterPage: registerPage,
+    renderVerifyPage: verifyPage,
+    renderLoginPage: loginPage,
+    forgotPasswordPage,
+    profilePage,
+    getSessionUser,
+    createUserId: () => `USR${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+  };
+
+  if (await handleAuthRoutes({ req, res, url, deps })) return;
+  if (await handleProfileRoutes({ req, res, url, deps })) return;
 
   if (url.pathname === '/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
