@@ -592,12 +592,21 @@ function renderUserProfile(session, profile, message = '') {
 
       ${message ? `<div class="stat" style="border-color:#86efac;background:#f0fdf4;color:#166534">${message}</div>` : ''}
 
-      <section class="stat" style="display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center">
-        <div style="width:100px;height:100px;border-radius:999px;background:linear-gradient(135deg,#bfdbfe,#fbcfe8)"></div>
+      <section class="stat" style="display:grid;grid-template-columns:190px 1fr;gap:18px;align-items:center;background:#fff">
+        <div style="position:relative;width:170px;height:170px;border-radius:999px;background:linear-gradient(135deg,#fef3c7,#fbcfe8);border:1px solid #f5d0fe;display:flex;align-items:center;justify-content:center;font-size:42px">💮</div>
         <div>
-          <div style="font-size:22px;font-weight:800">${profile.displayName}</div>
-          <div class="muted">@${session.username} • สถานะ: ${profile.status}</div>
-          <div style="margin-top:6px">${profile.bio}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div style="font-size:44px;font-weight:800;line-height:1">sodeclick</div>
+            <span style="font-size:20px">⚙️</span>
+          </div>
+          <div style="font-size:34px;font-weight:700;margin-top:4px">${profile.displayName}</div>
+          <div style="margin-top:8px;font-size:26px;font-weight:700;display:flex;gap:18px;flex-wrap:wrap">
+            <span><strong>361</strong> โพสต์</span>
+            <span><strong>5</strong> ผู้ติดตาม</span>
+            <span><strong>13</strong> กำลังติดตาม</span>
+          </div>
+          <div style="margin-top:10px;font-size:28px;line-height:1.35">พื้นที่ของการเริ่มต้นความสัมพันธ์ทุกรูปแบบ<br/>#โสดคลิก</div>
+          <div class="muted" style="margin-top:6px">@${session.username} • สถานะ: ${profile.status}</div>
         </div>
       </section>
 
@@ -635,11 +644,8 @@ function renderUserProfile(session, profile, message = '') {
         </form>
       </section>
 
-      <section class="grid">
-        <div class="stat"><div class="k">โพสต์ทั้งหมด</div><div class="v">12</div></div>
-        <div class="stat"><div class="k">ไลก์รวม</div><div class="v">94</div></div>
-        <div class="stat"><div class="k">คอมเมนต์รวม</div><div class="v">38</div></div>
-        <div class="stat"><div class="k">อัปเดตล่าสุด</div><div class="v">${new Date(profile.updatedAt || new Date()).toLocaleString('th-TH')}</div></div>
+      <section class="stat" style="background:#f8fafc">
+        <div class="muted">อัปเดตล่าสุด: ${new Date(profile.updatedAt || new Date()).toLocaleString('th-TH')}</div>
       </section>
     </main>
   `);
