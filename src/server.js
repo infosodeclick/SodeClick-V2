@@ -350,10 +350,10 @@ function renderUserApp(session) {
     <style>
       .social-wrap { display:grid; gap:12px; }
       .composer-box { border:1px solid #e5e7eb; border-radius:12px; background:#fff; overflow:visible; }
-      .composer-head { padding:10px 12px; border-bottom:1px solid #eef2f7; color:#64748b; font-weight:700; }
+      .composer-head { padding:10px 12px; border-bottom:1px solid #eef2f7; color:#64748b; font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:10px; }
       .composer-body { padding:10px 12px; }
       .composer-input { width:100%; min-height:92px; border:1px solid #d1d5db; border-radius:10px; padding:10px; resize:vertical; font-family:inherit; }
-      .composer-actions { display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:10px; }
+      .composer-actions { display:flex; justify-content:flex-end; align-items:center; margin-top:10px; gap:10px; }
       .tool-row { display:flex; flex-wrap:wrap; gap:8px; }
       .icon-btn { border:1px solid #dbe3f0; border-radius:10px; background:#fff; padding:7px 10px; cursor:pointer; }
       .send-btn { padding:8px 14px; border:0; border-radius:10px; font-weight:700; color:#fff; background:linear-gradient(135deg,#60a5fa,#f9a8d4); cursor:pointer; }
@@ -381,30 +381,32 @@ function renderUserApp(session) {
       </div>
 
       <div class="composer-box">
-        <div class="composer-head">แสดงความคิดเห็นในชื่อ ${session.displayName || session.username}</div>
+        <div class="composer-head">
+          <span>แสดงความคิดเห็นในชื่อ ${session.displayName || session.username}</span>
+          <div class="tool-row">
+            <button type="button" class="icon-btn" id="pickImageBtn">📷 รูป</button>
+            <select id="emojiSelect" class="icon-btn" style="width:120px;max-width:120px">
+              <option value="">😊 อีโมจิ</option>
+              <option value="😊">😊</option>
+              <option value="😂">😂</option>
+              <option value="❤️">❤️</option>
+              <option value="🔥">🔥</option>
+              <option value="👍">👍</option>
+              <option value="🎉">🎉</option>
+              <option value="🥰">🥰</option>
+              <option value="😎">😎</option>
+              <option value="💙">💙</option>
+              <option value="💬">💬</option>
+              <option value="✨">✨</option>
+              <option value="🙏">🙏</option>
+            </select>
+            <input id="imageInput" type="file" accept="image/*" class="hidden" />
+          </div>
+        </div>
         <div class="composer-body">
           <textarea id="postInput" class="composer-input" placeholder="เขียนโพสต์หรือความคิดเห็น..."></textarea>
           <div id="imagePreviewWrap" class="hidden" style="margin-top:8px"></div>
           <div class="composer-actions">
-            <div class="tool-row">
-              <button type="button" class="icon-btn" id="pickImageBtn">📷 รูป</button>
-              <select id="emojiSelect" class="icon-btn" style="width:120px;max-width:120px">
-                <option value="">😊 อีโมจิ</option>
-                <option value="😊">😊</option>
-                <option value="😂">😂</option>
-                <option value="❤️">❤️</option>
-                <option value="🔥">🔥</option>
-                <option value="👍">👍</option>
-                <option value="🎉">🎉</option>
-                <option value="🥰">🥰</option>
-                <option value="😎">😎</option>
-                <option value="💙">💙</option>
-                <option value="💬">💬</option>
-                <option value="✨">✨</option>
-                <option value="🙏">🙏</option>
-              </select>
-              <input id="imageInput" type="file" accept="image/*" class="hidden" />
-            </div>
             <button type="button" class="send-btn" id="postBtn">โพสต์</button>
           </div>
         </div>
@@ -419,181 +421,99 @@ function renderUserApp(session) {
       const currentUser = ${JSON.stringify(session.displayName || session.username)};
       let pendingImage = null;
 
-      function nowText(iso) {
-        try { return new Date(iso).toLocaleString('th-TH'); } catch (e) { return iso; }
+      function nowText(iso) { try { return new Date(iso).toLocaleString('th-TH'); } catch (e) { return iso; } }
+      function esc(text) {
+        return String(text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;');
       }
-
       function getDefaultPosts() {
         return [
-          { id: Date.now() - 2, user: 'GN', text: 'คิดถึงมากไหมคะ 😊', image: '', likes: 1, likedBy: ['GN'], replies: [], createdAt: new Date().toISOString() },
-          { id: Date.now() - 1, user: 'นกฮูกปลดแอก', text: 'เขาอาจจะคิดว่าพี่ขำหมดทุกคนก็ได้ 😂', image: '', likes: 3, likedBy: ['A','B','C'], replies: ['เห็นด้วยเลย'], createdAt: new Date().toISOString() }
+          { id: Date.now()-2, user:'GN', text:'คิดถึงมากไหมคะ 😊', image:'', likes:1, likedBy:['GN'], replies:[], createdAt:new Date().toISOString() },
+          { id: Date.now()-1, user:'นกฮูกปลดแอก', text:'เขาอาจจะคิดว่าพี่ขำหมดทุกคนก็ได้ 😂', image:'', likes:3, likedBy:['A','B','C'], replies:['เห็นด้วยเลย'], createdAt:new Date().toISOString() }
         ];
       }
-
-      function loadPosts() {
-        try {
-          const raw = localStorage.getItem(STORAGE_KEY);
-          const arr = raw ? JSON.parse(raw) : [];
-          if (Array.isArray(arr) && arr.length) return arr;
-        } catch (e) {}
-        return getDefaultPosts();
-      }
-
-      function savePosts(posts) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
-      }
-
-      function esc(text) {
-        return String(text || '')
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
-      }
+      function loadPosts(){ try{ const raw=localStorage.getItem(STORAGE_KEY); const arr=raw?JSON.parse(raw):[]; if(Array.isArray(arr)&&arr.length) return arr; }catch(e){} return getDefaultPosts(); }
+      function savePosts(posts){ localStorage.setItem(STORAGE_KEY, JSON.stringify(posts)); }
 
       let posts = loadPosts();
 
-      function renderFeed() {
-        const feed = document.getElementById('feed');
-        const empty = document.getElementById('emptyFeed');
-        if (!posts.length) {
-          feed.innerHTML = '';
-          empty.classList.remove('hidden');
-          return;
-        }
+      function renderFeed(){
+        const feed=document.getElementById('feed');
+        const empty=document.getElementById('emptyFeed');
+        if(!posts.length){ feed.innerHTML=''; empty.classList.remove('hidden'); return; }
         empty.classList.add('hidden');
-
-        let html = '';
-        for (let i = 0; i < posts.length; i += 1) {
-          const p = posts[i];
-          let replyHtml = '';
-          const replies = Array.isArray(p.replies) ? p.replies : [];
-          for (let j = 0; j < replies.length; j += 1) {
-            replyHtml += '<div class="reply-item">' + esc(replies[j]) + '</div>';
-          }
-
-          const imageHtml = p.image ? ('<img class="post-image" src="' + p.image + '" alt="post-image" />') : '';
-
-          const likedBy = Array.isArray(p.likedBy) ? p.likedBy : [];
-          const meLiked = likedBy.indexOf(currentUser) >= 0;
-
+        let html='';
+        for(let i=0;i<posts.length;i+=1){
+          const p=posts[i];
+          const likedBy=Array.isArray(p.likedBy)?p.likedBy:[];
+          const meLiked=likedBy.indexOf(currentUser)>=0;
+          const replies=Array.isArray(p.replies)?p.replies:[];
+          let replyHtml='';
+          for(let j=0;j<replies.length;j+=1){ replyHtml += '<div class="reply-item">'+esc(replies[j])+'</div>'; }
+          const imageHtml=p.image?('<img class="post-image" src="'+p.image+'" alt="post-image" />'):'';
           html += ''
             + '<article class="post-card">'
-            + '  <div class="post-top">'
-            + '    <div>'
-            + '      <div class="post-user">' + esc(p.user) + '</div>'
-            + '      <div class="post-time">' + nowText(p.createdAt) + '</div>'
-            + '    </div>'
-            + '  </div>'
-            + '  <div class="post-text">' + esc(p.text) + '</div>'
+            + '  <div class="post-top"><div><div class="post-user">'+esc(p.user)+'</div><div class="post-time">'+nowText(p.createdAt)+'</div></div></div>'
+            + '  <div class="post-text">'+esc(p.text)+'</div>'
             + imageHtml
-            + '  <div class="post-bar">'
-            + '    <button type="button" class="small-btn" data-like="' + i + '">' + (meLiked ? '👎 Unlike' : '👍 Like') + ' (' + likedBy.length + ')</button>'
-            + '  </div>'
-            + '  <div class="reply-row">'
-            + '    <input class="reply-input" id="reply-' + i + '" placeholder="เขียนตอบกลับ..." />'
-            + '    <button type="button" class="small-btn" data-reply="' + i + '">ตอบกลับ</button>'
-            + '  </div>'
-            + '  <div class="reply-list">' + replyHtml + '</div>'
+            + '  <div class="post-bar"><button type="button" class="small-btn" data-like="'+i+'">'+(meLiked?'👎 Unlike':'👍 Like')+' ('+likedBy.length+')</button></div>'
+            + '  <div class="reply-row"><input class="reply-input" id="reply-'+i+'" placeholder="เขียนตอบกลับ..." /><button type="button" class="small-btn" data-reply="'+i+'">ตอบกลับ</button></div>'
+            + '  <div class="reply-list">'+replyHtml+'</div>'
             + '</article>';
         }
+        feed.innerHTML=html;
 
-        feed.innerHTML = html;
-
-        const likeButtons = document.querySelectorAll('[data-like]');
-        for (let i = 0; i < likeButtons.length; i += 1) {
-          likeButtons[i].addEventListener('click', function () {
-            const idx = Number(this.getAttribute('data-like'));
-            if (Number.isNaN(idx) || !posts[idx]) return;
-
-            if (!Array.isArray(posts[idx].likedBy)) posts[idx].likedBy = [];
-            const pos = posts[idx].likedBy.indexOf(currentUser);
-            if (pos >= 0) {
-              posts[idx].likedBy.splice(pos, 1); // กดซ้ำ = ยกเลิก Like
-            } else {
-              posts[idx].likedBy.push(currentUser);
-            }
-            posts[idx].likes = posts[idx].likedBy.length;
-
-            savePosts(posts);
-            renderFeed();
+        document.querySelectorAll('[data-like]').forEach((el)=>{
+          el.addEventListener('click', function(){
+            const idx=Number(this.getAttribute('data-like')); if(Number.isNaN(idx)||!posts[idx]) return;
+            if(!Array.isArray(posts[idx].likedBy)) posts[idx].likedBy=[];
+            const pos=posts[idx].likedBy.indexOf(currentUser);
+            if(pos>=0) posts[idx].likedBy.splice(pos,1); else posts[idx].likedBy.push(currentUser);
+            posts[idx].likes=posts[idx].likedBy.length;
+            savePosts(posts); renderFeed();
           });
-        }
+        });
 
-        const replyButtons = document.querySelectorAll('[data-reply]');
-        for (let i = 0; i < replyButtons.length; i += 1) {
-          replyButtons[i].addEventListener('click', function () {
-            const idx = Number(this.getAttribute('data-reply'));
-            if (Number.isNaN(idx) || !posts[idx]) return;
-            const input = document.getElementById('reply-' + idx);
-            if (!input) return;
-            const val = (input.value || '').trim();
-            if (!val) return;
-            if (!Array.isArray(posts[idx].replies)) posts[idx].replies = [];
-            posts[idx].replies.push(currentUser + ': ' + val);
-            input.value = '';
-            savePosts(posts);
-            renderFeed();
+        document.querySelectorAll('[data-reply]').forEach((el)=>{
+          el.addEventListener('click', function(){
+            const idx=Number(this.getAttribute('data-reply')); if(Number.isNaN(idx)||!posts[idx]) return;
+            const input=document.getElementById('reply-'+idx); if(!input) return;
+            const val=(input.value||'').trim(); if(!val) return;
+            if(!Array.isArray(posts[idx].replies)) posts[idx].replies=[];
+            posts[idx].replies.push(currentUser+': '+val);
+            input.value=''; savePosts(posts); renderFeed();
           });
-        }
+        });
       }
 
-      function clearPreview() {
-        pendingImage = null;
-        const wrap = document.getElementById('imagePreviewWrap');
-        wrap.innerHTML = '';
-        wrap.classList.add('hidden');
+      function clearPreview(){
+        pendingImage=null; const wrap=document.getElementById('imagePreviewWrap');
+        wrap.innerHTML=''; wrap.classList.add('hidden');
       }
 
-      document.getElementById('pickImageBtn').addEventListener('click', function () {
-        document.getElementById('imageInput').click();
-      });
-
-      document.getElementById('imageInput').addEventListener('change', function (e) {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function () {
-          pendingImage = String(reader.result || '');
-          const wrap = document.getElementById('imagePreviewWrap');
+      document.getElementById('pickImageBtn').addEventListener('click',()=>document.getElementById('imageInput').click());
+      document.getElementById('imageInput').addEventListener('change', function(e){
+        const file=e.target.files && e.target.files[0]; if(!file) return;
+        const reader=new FileReader();
+        reader.onload=function(){
+          pendingImage=String(reader.result||'');
+          const wrap=document.getElementById('imagePreviewWrap');
           wrap.classList.remove('hidden');
-          wrap.innerHTML = '<img src="' + pendingImage + '" alt="preview" style="max-width:180px;border:1px solid #e5e7eb;border-radius:10px" />'
-            + ' <button type="button" class="small-btn" id="removeImageBtn">ลบรูป</button>';
-          const btn = document.getElementById('removeImageBtn');
-          if (btn) btn.addEventListener('click', clearPreview);
+          wrap.innerHTML='<img src="'+pendingImage+'" alt="preview" style="max-width:180px;border:1px solid #e5e7eb;border-radius:10px" /> <button type="button" class="small-btn" id="removeImageBtn">ลบรูป</button>';
+          const btn=document.getElementById('removeImageBtn'); if(btn) btn.addEventListener('click', clearPreview);
         };
         reader.readAsDataURL(file);
       });
 
-      const emojiSelect = document.getElementById('emojiSelect');
-      emojiSelect.addEventListener('change', function () {
-        const emo = this.value || '';
-        if (!emo) return;
-        const ta = document.getElementById('postInput');
-        ta.value = (ta.value || '') + emo;
-        ta.focus();
-        this.value = '';
+      document.getElementById('emojiSelect').addEventListener('change', function(){
+        const emo=this.value||''; if(!emo) return;
+        const ta=document.getElementById('postInput'); ta.value=(ta.value||'')+emo; ta.focus(); this.value='';
       });
 
-      document.getElementById('postBtn').addEventListener('click', function () {
-        const ta = document.getElementById('postInput');
-        const text = (ta.value || '').trim();
-        if (!text && !pendingImage) return;
-        posts.unshift({
-          id: Date.now(),
-          user: currentUser,
-          text: text,
-          image: pendingImage || '',
-          likes: 0,
-          likedBy: [],
-          replies: [],
-          createdAt: new Date().toISOString()
-        });
-        ta.value = '';
-        clearPreview();
-        savePosts(posts);
-        renderFeed();
+      document.getElementById('postBtn').addEventListener('click', function(){
+        const ta=document.getElementById('postInput'); const text=(ta.value||'').trim();
+        if(!text && !pendingImage) return;
+        posts.unshift({id:Date.now(), user:currentUser, text, image:pendingImage||'', likes:0, likedBy:[], replies:[], createdAt:new Date().toISOString()});
+        ta.value=''; clearPreview(); savePosts(posts); renderFeed();
       });
 
       renderFeed();
