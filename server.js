@@ -77,14 +77,20 @@ function htmlPage(title, body) {
 
 function homePage() {
   return htmlPage('SodeClick V2', `
-    <main class="card">
-      <h1 class="title">SodeClick V2</h1>
-      <p class="muted">โมดูล 1–2: สมัครสมาชิก + โปรไฟล์ผู้ใช้</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-        <a class="btn btn-primary" href="/register">สมัครสมาชิก</a>
-        <a class="btn" href="/login">เข้าสู่ระบบ</a>
-        <a class="btn" href="/health">Health</a>
-      </div>
+    <main class="card" style="display:grid;gap:12px">
+      <nav class="card" style="padding:12px;border-radius:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+        <div style="font-weight:800">SodeClick V2</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn btn-primary" href="/register">สมัครสมาชิก</a>
+          <a class="btn" href="/login">เข้าสู่ระบบ</a>
+          <a class="btn" href="/forgot-password">ลืมรหัสผ่าน</a>
+          <a class="btn" href="/auth/google">Google Login</a>
+        </div>
+      </nav>
+      <section class="card" style="padding:16px;border-radius:12px">
+        <h1 class="title">SodeClick V2</h1>
+        <p class="muted">Phase A เริ่มแล้ว: ระบบสมาชิก + โปรไฟล์ (Responsive / Horizontal Navbar / Card UI)</p>
+      </section>
     </main>
   `);
 }
@@ -136,7 +142,25 @@ function loginPage(error = '', info = '') {
       <form method="POST" action="/login" style="display:grid;gap:10px">
         <div><label>Email หรือ Username</label><input name="login" required /></div>
         <div><label>Password</label><input type="password" name="password" required /></div>
-        <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" type="submit">เข้าสู่ระบบ</button></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+          <a class="btn" href="/forgot-password">ลืมรหัสผ่าน</a>
+          <button class="btn btn-primary" type="submit">เข้าสู่ระบบ</button>
+        </div>
+      </form>
+      <a class="btn" href="/auth/google">เข้าสู่ระบบด้วย Google (demo)</a>
+    </main>
+  `);
+}
+
+function forgotPasswordPage(error = '', info = '') {
+  return htmlPage('ลืมรหัสผ่าน', `
+    <main class="card" style="display:grid;gap:12px;max-width:560px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">ลืมรหัสผ่าน</h2><a class="btn" href="/login">กลับหน้าเข้าสู่ระบบ</a></div>
+      ${error ? `<div class="err">${error}</div>` : ''}
+      ${info ? `<div class="ok">${info}</div>` : ''}
+      <form method="POST" action="/forgot-password" style="display:grid;gap:10px">
+        <div><label>Email</label><input type="email" name="email" required /></div>
+        <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" type="submit">รีเซ็ตรหัสผ่าน (demo)</button></div>
       </form>
     </main>
   `);
@@ -153,13 +177,21 @@ function profilePage(user, message = '') {
       <section class="card" style="padding:14px;border-radius:12px">
         <div style="font-size:24px;font-weight:800">${user.displayName || user.username}</div>
         <div class="muted">@${user.username} • ${user.email}</div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          ${user.verifiedBadge ? '<span class="ok" style="padding:4px 8px">Verified</span>' : ''}
+          ${user.vipStatus ? '<span class="ok" style="padding:4px 8px">VIP</span>' : ''}
+          ${user.emailVerified ? '<span class="ok" style="padding:4px 8px">Email Verified</span>' : '<span class="err" style="padding:4px 8px">Email Not Verified</span>'}
+          ${user.phoneVerified ? '<span class="ok" style="padding:4px 8px">Phone Verified</span>' : '<span class="err" style="padding:4px 8px">Phone Not Verified</span>'}
+        </div>
       </section>
       <form method="POST" action="/profile" style="display:grid;gap:10px">
         <div class="grid">
           <div><label>ชื่อแสดงผล</label><input name="displayName" value="${user.displayName || user.username}" /></div>
           <div><label>สถานะ</label><select name="status"><option value="online" ${user.status === 'online' ? 'selected' : ''}>online</option><option value="busy" ${user.status === 'busy' ? 'selected' : ''}>busy</option><option value="offline" ${user.status === 'offline' ? 'selected' : ''}>offline</option></select></div>
           <div><label>จังหวัด</label><input name="location" value="${user.location || ''}" /></div>
+          <div><label>อาชีพ</label><input name="occupation" value="${user.occupation || ''}" /></div>
           <div><label>ความสนใจ</label><input name="interests" value="${user.interests || ''}" /></div>
+          <div><label>เป้าหมายความสัมพันธ์</label><select name="relationshipGoal"><option value="friend" ${user.relationshipGoal==='friend'?'selected':''}>friend</option><option value="dating" ${user.relationshipGoal==='dating'?'selected':''}>dating</option><option value="serious" ${user.relationshipGoal==='serious'?'selected':''}>serious</option></select></div>
         </div>
         <div><label>Bio</label><textarea name="bio" rows="4">${user.bio || ''}</textarea></div>
         <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" type="submit">บันทึกโปรไฟล์</button></div>
@@ -210,6 +242,18 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/login' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(loginPage());
+    return;
+  }
+
+  if (url.pathname === '/forgot-password' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(forgotPasswordPage());
+    return;
+  }
+
+  if (url.pathname === '/auth/google' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(loginPage('', 'Google login (demo) พร้อมเชื่อม OAuth ในรอบถัดไป'));
     return;
   }
 
@@ -307,6 +351,11 @@ const server = http.createServer((req, res) => {
         status: 'online',
         coins: 0,
         vipStatus: false,
+        verifiedBadge: false,
+        emailVerified: true,
+        phoneVerified: false,
+        occupation: '',
+        relationshipGoal: 'friend',
         createdAt: Date.now(),
       });
       writeJson(usersFile, users);
@@ -364,13 +413,38 @@ const server = http.createServer((req, res) => {
       users[idx].displayName = String(body.displayName || users[idx].displayName || users[idx].username).trim();
       users[idx].status = ['online', 'busy', 'offline'].includes(body.status) ? body.status : 'online';
       users[idx].location = String(body.location || '').trim();
+      users[idx].occupation = String(body.occupation || '').trim();
       users[idx].interests = String(body.interests || '').trim();
+      users[idx].relationshipGoal = ['friend', 'dating', 'serious'].includes(body.relationshipGoal) ? body.relationshipGoal : 'friend';
       users[idx].bio = String(body.bio || '').trim();
       users[idx].updatedAt = Date.now();
       writeJson(usersFile, users);
 
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(profilePage(users[idx], 'บันทึกโปรไฟล์เรียบร้อยแล้ว'));
+    });
+    return;
+  }
+
+  if (url.pathname === '/forgot-password' && req.method === 'POST') {
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const email = String(body.email || '').trim().toLowerCase();
+      const users = readJson(usersFile);
+      const idx = users.findIndex((u) => u.email === email);
+      if (idx < 0) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(forgotPasswordPage('ไม่พบอีเมลนี้ในระบบ'));
+        return;
+      }
+      const temp = Math.random().toString(36).slice(2, 10);
+      users[idx].password = temp;
+      users[idx].updatedAt = Date.now();
+      writeJson(usersFile, users);
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(forgotPasswordPage('', `รีเซ็ตสำเร็จ (demo) รหัสใหม่: ${temp}`));
     });
     return;
   }
