@@ -9,6 +9,10 @@ const usersFile = path.join(dataDir, 'users.json');
 const pendingFile = path.join(dataDir, 'pending.json');
 const likesFile = path.join(dataDir, 'likes.json');
 const matchesFile = path.join(dataDir, 'matches.json');
+const messagesFile = path.join(dataDir, 'messages.json');
+const blocksFile = path.join(dataDir, 'blocks.json');
+const reportsFile = path.join(dataDir, 'reports.json');
+const giftsFile = path.join(dataDir, 'gift-transactions.json');
 
 const userSessions = new Map(); // sid -> { email, username }
 
@@ -18,6 +22,10 @@ function ensureData() {
   if (!fs.existsSync(pendingFile)) fs.writeFileSync(pendingFile, '[]', 'utf8');
   if (!fs.existsSync(likesFile)) fs.writeFileSync(likesFile, '[]', 'utf8');
   if (!fs.existsSync(matchesFile)) fs.writeFileSync(matchesFile, '[]', 'utf8');
+  if (!fs.existsSync(messagesFile)) fs.writeFileSync(messagesFile, '[]', 'utf8');
+  if (!fs.existsSync(blocksFile)) fs.writeFileSync(blocksFile, '[]', 'utf8');
+  if (!fs.existsSync(reportsFile)) fs.writeFileSync(reportsFile, '[]', 'utf8');
+  if (!fs.existsSync(giftsFile)) fs.writeFileSync(giftsFile, '[]', 'utf8');
 }
 
 function readJson(file) {
@@ -205,7 +213,9 @@ function profilePage(user, message = '') {
 }
 
 function renderMatchPage(me, query, info = '') {
-  const users = readJson(usersFile).filter((u) => u.username !== me.username);
+  const blocks = readJson(blocksFile);
+  const blockedByMe = new Set(blocks.filter((b) => b.owner === me.username).map((b) => b.target));
+  const users = readJson(usersFile).filter((u) => u.username !== me.username && !blockedByMe.has(u.username));
   const likes = readJson(likesFile);
   const matches = readJson(matchesFile);
 
@@ -257,11 +267,47 @@ function renderMatchPage(me, query, info = '') {
       </section>
       <section class="grid">${cards || '<div class="muted">ไม่พบผู้ใช้ตามเงื่อนไข</div>'}</section>
       <section class="card" style="padding:12px;border-radius:12px"><strong>คนที่กดไลก์เรา</strong><div class="muted" style="margin-top:6px">${likedMe.length ? likedMe.map((x) => x.from).join(', ') : 'ยังไม่มี'}</div></section>
-      <section class="card" style="padding:12px;border-radius:12px"><strong>Match ของฉัน</strong><div class="muted" style="margin-top:6px">${myMatches.length ? myMatches.map((m) => m.userA===me.username?m.userB:m.userA).join(', ') : 'ยังไม่มี match'}</div></section>
+      <section class="card" style="padding:12px;border-radius:12px"><strong>Match ของฉัน</strong><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">${myMatches.length ? myMatches.map((m) => `<a class=\"btn\" href=\"/chat/${m.id}\">💬 ${m.userA===me.username?m.userB:m.userA}</a>`).join(' ') : '<span class="muted">ยังไม่มี match</span>'}</div></section>
       <section class="card" style="padding:12px;border-radius:12px">
         <strong>Boost Profile</strong>
         <form method="POST" action="/match/boost" style="margin-top:8px"><button class="btn btn-primary" type="submit">🚀 Boost โปรไฟล์ (demo)</button></form>
       </section>
+    </main>
+  `);
+}
+
+function renderChatPage(me, matchId, info = '') {
+  const matches = readJson(matchesFile);
+  const m = matches.find((x) => x.id === matchId && (x.userA === me.username || x.userB === me.username));
+  if (!m) return htmlPage('ไม่พบแชท', '<main class="card"><h2>ไม่พบห้องแชท</h2><a class="btn" href="/match">กลับ Match</a></main>');
+
+  const partner = m.userA === me.username ? m.userB : m.userA;
+  const msgs = readJson(messagesFile).filter((x) => x.matchId === matchId).slice(-80);
+  const rows = msgs.map((x) => `<div class="card" style="padding:10px;border-radius:10px;background:${x.sender===me.username?'#eff6ff':'#fff'}"><strong>${x.sender}</strong> <span class="muted">${new Date(x.at).toLocaleString('th-TH')}</span><div style="margin-top:6px">${x.text}</div><div class="muted" style="margin-top:4px">${x.read ? 'read' : 'sent'}</div></div>`).join('');
+
+  const giftBtns = [
+    { id:'flower', name:'🌹 ดอกไม้', price:10 },
+    { id:'heart', name:'❤️ หัวใจ', price:20 },
+    { id:'ring', name:'💍 แหวน', price:100 },
+  ].map((g)=>`<form method="POST" action="/chat/${matchId}/gift" style="display:inline-block"><input type="hidden" name="giftId" value="${g.id}"/><input type="hidden" name="price" value="${g.price}"/><button class="btn" type="submit">${g.name} (${g.price})</button></form>`).join(' ');
+
+  return htmlPage('แชท', `
+    <main class="card" style="display:grid;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">แชทกับ ${partner}</h2><div style="display:flex;gap:8px"><a class="btn" href="/match">กลับ Match</a><a class="btn" href="/logout">Logout</a></div></div>
+      ${info ? `<div class="ok">${info}</div>` : ''}
+      <div style="display:grid;gap:8px">${rows || '<div class="muted">ยังไม่มีข้อความ</div>'}</div>
+      <div class="card" style="padding:10px;border-radius:10px"><strong>ส่งของขวัญ</strong><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">${giftBtns}</div></div>
+      <form method="POST" action="/chat/${matchId}" style="display:grid;gap:8px">
+        <textarea name="message" rows="4" placeholder="พิมพ์ข้อความ... (รองรับ emoji 😊)"></textarea>
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
+          <div style="display:flex;gap:8px"><button class="btn" name="quick" value="😊" type="submit">😊</button><button class="btn" name="quick" value="❤️" type="submit">❤️</button><button class="btn" name="quick" value="🔥" type="submit">🔥</button></div>
+          <button class="btn btn-primary" type="submit">ส่งข้อความ</button>
+        </div>
+      </form>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <form method="POST" action="/chat/${matchId}/block"><button class="btn" type="submit">⛔ Block</button></form>
+        <form method="POST" action="/chat/${matchId}/report"><button class="btn" type="submit">🚩 Report</button></form>
+      </div>
     </main>
   `);
 }
@@ -586,6 +632,134 @@ const server = http.createServer((req, res) => {
     }
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(renderMatchPage(users[idx] || me, {}, 'Boost โปรไฟล์แล้ว (30 นาที demo)'));
+    return;
+  }
+
+  if (url.pathname.startsWith('/chat/') && req.method === 'GET') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    const matchId = url.pathname.replace('/chat/', '').trim();
+    const messages = readJson(messagesFile);
+    let changed = false;
+    messages.forEach((m) => {
+      if (m.matchId === matchId && m.sender !== me.username && !m.read) {
+        m.read = true;
+        changed = true;
+      }
+    });
+    if (changed) writeJson(messagesFile, messages);
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderChatPage(me, matchId));
+    return;
+  }
+
+  if (url.pathname.startsWith('/chat/') && req.method === 'POST' && !url.pathname.endsWith('/gift') && !url.pathname.endsWith('/block') && !url.pathname.endsWith('/report')) {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    const matchId = url.pathname.replace('/chat/', '').trim();
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const txt = String((body.quick || '') + (body.message || '')).trim();
+      if (!txt) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderChatPage(me, matchId, 'กรุณาพิมพ์ข้อความก่อนส่ง'));
+        return;
+      }
+      const messages = readJson(messagesFile);
+      messages.push({ id: `MSG${Date.now()}`, matchId, sender: me.username, text: txt, at: Date.now(), read: false });
+      writeJson(messagesFile, messages);
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderChatPage(me, matchId, 'ส่งข้อความสำเร็จ'));
+    });
+    return;
+  }
+
+  if (url.pathname.startsWith('/chat/') && url.pathname.endsWith('/gift') && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    const matchId = url.pathname.replace('/chat/', '').replace('/gift', '').trim();
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const price = Number(body.price || 0);
+      const giftId = String(body.giftId || '').trim();
+      const users = readJson(usersFile);
+      const idx = users.findIndex((u) => u.username === me.username);
+      if (idx < 0 || (users[idx].coins || 0) < price) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderChatPage(me, matchId, 'เหรียญไม่พอสำหรับส่งของขวัญ'));
+        return;
+      }
+      users[idx].coins = (users[idx].coins || 0) - price;
+      writeJson(usersFile, users);
+      const gifts = readJson(giftsFile);
+      gifts.push({ id: `GTR${Date.now()}`, matchId, from: me.username, giftId, price, at: Date.now() });
+      writeJson(giftsFile, gifts);
+      const messages = readJson(messagesFile);
+      messages.push({ id: `MSG${Date.now()}`, matchId, sender: me.username, text: `ส่งของขวัญ ${giftId}`, at: Date.now(), read: false });
+      writeJson(messagesFile, messages);
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderChatPage(users[idx], matchId, 'ส่งของขวัญสำเร็จ'));
+    });
+    return;
+  }
+
+  if (url.pathname.startsWith('/chat/') && url.pathname.endsWith('/block') && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    const matchId = url.pathname.replace('/chat/', '').replace('/block', '').trim();
+    const matches = readJson(matchesFile);
+    const m = matches.find((x) => x.id === matchId && (x.userA === me.username || x.userB === me.username));
+    if (m) {
+      const target = m.userA === me.username ? m.userB : m.userA;
+      const blocks = readJson(blocksFile);
+      if (!blocks.find((b) => b.owner === me.username && b.target === target)) {
+        blocks.push({ id: `BLK${Date.now()}`, owner: me.username, target, at: Date.now() });
+        writeJson(blocksFile, blocks);
+      }
+    }
+    res.writeHead(302, { Location: '/match' });
+    res.end();
+    return;
+  }
+
+  if (url.pathname.startsWith('/chat/') && url.pathname.endsWith('/report') && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    const matchId = url.pathname.replace('/chat/', '').replace('/report', '').trim();
+    const matches = readJson(matchesFile);
+    const m = matches.find((x) => x.id === matchId && (x.userA === me.username || x.userB === me.username));
+    if (m) {
+      const target = m.userA === me.username ? m.userB : m.userA;
+      const reports = readJson(reportsFile);
+      reports.push({ id: `RPT${Date.now()}`, reporter: me.username, target, reason: 'chat-report', at: Date.now() });
+      writeJson(reportsFile, reports);
+    }
+    res.writeHead(302, { Location: '/match' });
+    res.end();
     return;
   }
 
