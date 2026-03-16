@@ -19,7 +19,13 @@
 
 ## Database Design (target SQL)
 - `db/001_mvp_schema.sql` — MVP relational schema
+- `db/002_fullscale_extensions.sql` — full-scale extension schema
+- `db/seed_from_json.sql` — auto-generated SQL seed from current JSON data
 - `docs/DATABASE_TABLES.md` — full table map (MVP + full scale)
+- `docs/JSON_TO_SQL_MAPPING.md` — mapping/steps for JSON -> SQL migration
+
+## Scripts
+- `scripts/migrate-json-to-sql.js` — export JSON runtime data to SQL seed
 
 ## Notes
 - UI/logic currently runs from `server.js`
