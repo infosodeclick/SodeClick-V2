@@ -18,6 +18,7 @@ const frameTxFile = path.join(dataDir, 'frame-transactions.json');
 const boardPostsFile = path.join(dataDir, 'board-posts.json');
 
 const userSessions = new Map(); // sid -> { email, username }
+const adminSessions = new Map(); // aid -> { username, role }
 const actionTs = new Map(); // anti-spam in-memory
 
 function isSpamAction(key, cooldownMs = 2500) {
@@ -331,6 +332,98 @@ function renderChatPage(me, matchId, info = '') {
       </div>
     </main>
   `);
+}
+
+function renderAdminLoginPage(error = '') {
+  return htmlPage('Admin Login', `
+    <main class="card" style="display:grid;gap:12px;max-width:520px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Admin Login</h2><a class="btn" href="/">หน้าแรก</a></div>
+      ${error ? `<div class="err">${error}</div>` : ''}
+      <form method="POST" action="/admin/login" style="display:grid;gap:10px">
+        <div><label>Username</label><input name="username" required /></div>
+        <div><label>Password</label><input type="password" name="password" required /></div>
+        <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" type="submit">เข้าสู่ระบบหลังบ้าน</button></div>
+      </form>
+    </main>
+  `);
+}
+
+function adminShell(title, body) {
+  return htmlPage(title, `
+    <main class="card" style="display:grid;gap:12px">
+      <nav class="card" style="padding:10px;border-radius:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn" href="/admin/dashboard">Dashboard</a>
+        <a class="btn" href="/admin/members">สมาชิก</a>
+        <a class="btn" href="/admin/vip">VIP</a>
+        <a class="btn" href="/admin/coins">เหรียญ</a>
+        <a class="btn" href="/admin/frames">กรอบ</a>
+        <a class="btn" href="/admin/reports">รายงาน</a>
+        <a class="btn" href="/admin/threads">กระทู้</a>
+        <a class="btn" href="/admin/logout">Logout</a>
+      </nav>
+      ${body}
+    </main>
+  `);
+}
+
+function renderAdminDashboard() {
+  const users = readJson(usersFile);
+  const vipCount = users.filter((u) => u.vipStatus).length;
+  const tx = readJson(coinTxFile);
+  const reports = readJson(reportsFile);
+  const posts = readJson(boardPostsFile);
+  return adminShell('Admin Dashboard', `
+    <h2 style="margin:0">Admin Dashboard</h2>
+    <section class="grid">
+      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">สมาชิกทั้งหมด</div><div style="font-size:28px;font-weight:800">${users.length}</div></div>
+      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">VIP Users</div><div style="font-size:28px;font-weight:800">${vipCount}</div></div>
+      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">Coin Transactions</div><div style="font-size:28px;font-weight:800">${tx.length}</div></div>
+      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">Report Users</div><div style="font-size:28px;font-weight:800">${reports.length}</div></div>
+      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">กระทู้ทั้งหมด</div><div style="font-size:28px;font-weight:800">${posts.length}</div></div>
+    </section>
+  `);
+}
+
+function renderAdminMembers() {
+  const users = readJson(usersFile);
+  const rows = users.map((u)=>`<tr><td>${u.username}</td><td>${u.email}</td><td>${u.vipStatus ? 'VIP':'Free'}</td><td>${u.coins||0}</td><td>${u.location||''}</td></tr>`).join('');
+  return adminShell('จัดการสมาชิก', `<h2 style="margin:0">จัดการสมาชิก</h2><div style="overflow:auto"><table><thead><tr><th>Username</th><th>Email</th><th>Plan</th><th>Coins</th><th>Location</th></tr></thead><tbody>${rows||'<tr><td colspan="5">ไม่มีข้อมูล</td></tr>'}</tbody></table></div>`);
+}
+
+function renderAdminVip() {
+  const users = readJson(usersFile).filter((u)=>u.vipStatus);
+  const rows = users.map((u)=>`<tr><td>${u.username}</td><td>${u.email}</td><td>${u.vipUntil?new Date(u.vipUntil).toLocaleString('th-TH'):'-'}</td></tr>`).join('');
+  return adminShell('จัดการ VIP', `<h2 style="margin:0">จัดการ VIP</h2><div style="overflow:auto"><table><thead><tr><th>Username</th><th>Email</th><th>หมดอายุ</th></tr></thead><tbody>${rows||'<tr><td colspan="3">ไม่มี VIP</td></tr>'}</tbody></table></div>`);
+}
+
+function renderAdminCoins() {
+  const tx = readJson(coinTxFile).slice(-100).reverse();
+  const rows = tx.map((t)=>`<tr><td>${new Date(t.at).toLocaleString('th-TH')}</td><td>${t.username}</td><td>${t.type}</td><td>${t.amount}</td><td>${t.note||''}</td></tr>`).join('');
+  return adminShell('จัดการเหรียญ', `<h2 style="margin:0">จัดการเหรียญ</h2><div style="overflow:auto"><table><thead><tr><th>เวลา</th><th>User</th><th>Type</th><th>Amount</th><th>Note</th></tr></thead><tbody>${rows||'<tr><td colspan="5">ไม่มีรายการ</td></tr>'}</tbody></table></div>`);
+}
+
+function renderAdminFrames() {
+  const tx = readJson(frameTxFile).slice(-100).reverse();
+  const rows = tx.map((t)=>`<tr><td>${new Date(t.at).toLocaleString('th-TH')}</td><td>${t.username}</td><td>${t.type}</td><td>${t.frameId}</td><td>${t.price}</td></tr>`).join('');
+  return adminShell('จัดการกรอบรูป', `<h2 style="margin:0">จัดการกรอบรูป</h2><div style="overflow:auto"><table><thead><tr><th>เวลา</th><th>User</th><th>Type</th><th>Frame</th><th>Price</th></tr></thead><tbody>${rows||'<tr><td colspan="5">ไม่มีรายการ</td></tr>'}</tbody></table></div>`);
+}
+
+function renderAdminReports() {
+  const reports = readJson(reportsFile).slice(-100).reverse();
+  const rows = reports.map((r)=>`<tr><td>${new Date(r.at).toLocaleString('th-TH')}</td><td>${r.reporter}</td><td>${r.target}</td><td>${r.reason}</td></tr>`).join('');
+  return adminShell('จัดการรายงาน', `<h2 style="margin:0">จัดการรายงาน</h2><div style="overflow:auto"><table><thead><tr><th>เวลา</th><th>Reporter</th><th>Target</th><th>Reason</th></tr></thead><tbody>${rows||'<tr><td colspan="4">ไม่มีรายงาน</td></tr>'}</tbody></table></div>`);
+}
+
+function renderAdminThreads() {
+  const posts = readJson(boardPostsFile).slice(-100).reverse();
+  const rows = posts.map((p)=>`<tr><td>${new Date(p.createdAt).toLocaleString('th-TH')}</td><td>${p.author}</td><td>${p.title}</td><td>${p.category}</td><td>${p.likes||0}</td><td>${(p.comments||[]).length}</td><td>${p.reports||0}</td></tr>`).join('');
+  return adminShell('จัดการกระทู้', `<h2 style="margin:0">จัดการกระทู้</h2><div style="overflow:auto"><table><thead><tr><th>เวลา</th><th>Author</th><th>Title</th><th>Category</th><th>Likes</th><th>Comments</th><th>Reports</th></tr></thead><tbody>${rows||'<tr><td colspan="7">ไม่มีกระทู้</td></tr>'}</tbody></table></div>`);
+}
+
+function getAdminSession(req) {
+  const aid = parseCookies(req).aid;
+  if (!aid) return null;
+  return adminSessions.get(aid) || null;
 }
 
 function renderSecurityPage(me, info = '') {
@@ -1220,6 +1313,57 @@ const server = http.createServer((req, res) => {
     res.writeHead(302, { Location: '/login' });
     res.end();
     return;
+  }
+
+  if (url.pathname === '/admin/login' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderAdminLoginPage());
+    return;
+  }
+
+  if (url.pathname === '/admin/login' && req.method === 'POST') {
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const username = String(body.username || '').trim();
+      const password = String(body.password || '').trim();
+      if (username === 'admin' && password === '123456') {
+        const aid = crypto.randomBytes(24).toString('hex');
+        adminSessions.set(aid, { username: 'admin', role: 'admin', at: Date.now() });
+        res.writeHead(302, { Location: '/admin/dashboard', 'Set-Cookie': `aid=${aid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=28800` });
+        res.end();
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderAdminLoginPage('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'));
+    });
+    return;
+  }
+
+  if (url.pathname === '/admin/logout' && req.method === 'GET') {
+    const aid = parseCookies(req).aid;
+    if (aid) adminSessions.delete(aid);
+    res.writeHead(302, { Location: '/admin/login', 'Set-Cookie': 'aid=; Path=/; HttpOnly; Max-Age=0' });
+    res.end();
+    return;
+  }
+
+  if (url.pathname.startsWith('/admin/')) {
+    const admin = getAdminSession(req);
+    if (!admin) {
+      res.writeHead(302, { Location: '/admin/login' });
+      res.end();
+      return;
+    }
+
+    if (url.pathname === '/admin/dashboard') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminDashboard()); return; }
+    if (url.pathname === '/admin/members') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminMembers()); return; }
+    if (url.pathname === '/admin/vip') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminVip()); return; }
+    if (url.pathname === '/admin/coins') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminCoins()); return; }
+    if (url.pathname === '/admin/frames') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminFrames()); return; }
+    if (url.pathname === '/admin/reports') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminReports()); return; }
+    if (url.pathname === '/admin/threads') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminThreads()); return; }
   }
 
   if (url.pathname === '/security' && req.method === 'GET') {
