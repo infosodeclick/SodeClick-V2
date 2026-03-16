@@ -269,16 +269,43 @@ function countSince(date) {
 }
 
 function renderHome() {
+  const publicPosts = [
+    { user: 'GN', text: 'คิดถึงมากไหมคะ 😊', at: 'เมื่อสักครู่', likes: 12, comments: 4 },
+    { user: 'นกฮูกปลดแอก', text: 'เขาอาจจะคิดว่าพี่ขำหมดทุกคนก็ได้ 😂', at: '5 นาทีที่แล้ว', likes: 21, comments: 7 },
+    { user: 'สมาชิกใหม่', text: 'ขอบคุณทุกคนที่ต้อนรับครับ ✨', at: '15 นาทีที่แล้ว', likes: 8, comments: 2 },
+  ];
+
+  const feed = publicPosts.map((p) => `
+    <article class="stat" style="margin-bottom:10px;background:#fff">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+        <strong>${p.user}</strong>
+        <span class="muted">${p.at}</span>
+      </div>
+      <div style="margin-top:8px;white-space:pre-wrap">${p.text}</div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn" href="/login">👍 ถูกใจ (${p.likes})</a>
+        <a class="btn" href="/login">💬 คอมเมนต์ (${p.comments})</a>
+      </div>
+    </article>
+  `).join('');
+
   return htmlPage('SodeClick V2', `
     <main class="card">
       <div class="head">
-        <h2 style="margin:0">SodeClick V2</h2>
+        <h2 style="margin:0">กระดานสาธารณะ</h2>
         <a class="btn btn-primary" href="/login">Login</a>
       </div>
-      <p>ใช้ Login เดียว ระบบจะตรวจสิทธิ์อัตโนมัติ (ผู้มีสิทธิ์เข้าหลังบ้านได้ทันที)</p>
-      <div class="grid" style="margin-top:12px">
-        <div class="stat"><div class="k">โครงระบบ</div><div class="v">พร้อม</div></div>
-        <div class="stat"><div class="k">Health</div><div class="v">OK</div></div>
+
+      <p class="muted" style="margin-top:6px">
+        หน้าแรกสามารถดูโพสต์ได้ แต่การกดถูกใจ / คอมเมนต์ / โพสต์ใหม่ ต้องเข้าสู่ระบบก่อน
+      </p>
+
+      <section style="margin-top:12px">${feed}</section>
+
+      <div class="stat" style="margin-top:12px;border-style:dashed;background:#f8fafc">
+        <strong>ต้องการมีส่วนร่วม?</strong>
+        <p class="muted" style="margin:6px 0 10px">เข้าสู่ระบบเพื่อโพสต์, คอมเมนต์ และกดถูกใจได้ทันที</p>
+        <a class="btn btn-primary" href="/login">เข้าสู่ระบบก่อนใช้งาน</a>
       </div>
     </main>
   `);
