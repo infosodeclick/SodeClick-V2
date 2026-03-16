@@ -34,6 +34,9 @@ const shopOrders = [];
 const earningsLedger = [];
 const registeredUsers = new Map();
 const pendingVerifications = new Map();
+const userLikes = []; // {from,to,type,at}
+const matches = []; // {id,userA,userB,at}
+const chats = new Map(); // matchId -> [{sender,text,at}]
 
 const dataDir = path.join(__dirname, '..', 'data');
 const stateFile = path.join(dataDir, 'app-state.json');
@@ -50,6 +53,9 @@ function saveAppState() {
     earningsLedger,
     registeredUsers: Array.from(registeredUsers.entries()),
     pendingVerifications: Array.from(pendingVerifications.entries()),
+    userLikes,
+    matches,
+    chats: Array.from(chats.entries()),
     updatedAt: new Date().toISOString(),
   };
   fs.writeFileSync(stateFile, JSON.stringify(payload, null, 2), 'utf8');
@@ -88,6 +94,12 @@ function loadAppState() {
 
     if (Array.isArray(parsed.pendingVerifications)) {
       for (const [k, v] of parsed.pendingVerifications) pendingVerifications.set(k, v);
+    }
+
+    if (Array.isArray(parsed.userLikes)) parsed.userLikes.forEach((x) => userLikes.push(x));
+    if (Array.isArray(parsed.matches)) parsed.matches.forEach((x) => matches.push(x));
+    if (Array.isArray(parsed.chats)) {
+      for (const [k, v] of parsed.chats) chats.set(k, Array.isArray(v) ? v : []);
     }
   } catch (err) {
     console.error('[state-load-error]', err.message);
@@ -206,6 +218,20 @@ function canDoAction(profile, action, cooldownMs = 1200) {
   if (now - last < cooldownMs) return false;
   profile.actionLocks[action] = now;
   return true;
+}
+
+function getAllDatingUsers() {
+  return Array.from(registeredUsers.values());
+}
+
+function ensureMatch(userA, userB) {
+  const sorted = [userA, userB].sort();
+  const existing = matches.find((m) => [m.userA, m.userB].sort().join('|') === sorted.join('|'));
+  if (existing) return existing;
+  const m = { id: `M${crypto.randomBytes(4).toString('hex')}`, userA: sorted[0], userB: sorted[1], at: new Date() };
+  matches.unshift(m);
+  if (!chats.has(m.id)) chats.set(m.id, []);
+  return m;
 }
 
 function hasPermission(role, action) {
@@ -563,6 +589,7 @@ function renderUserApp(session) {
         <nav class="board-nav">
           <a class="board-tab active" href="/app">📋 บอร์ด</a>
           <a class="board-tab" href="/app/shop">🛍 ร้านค้า</a>
+          <a class="board-tab" href="/app/match">💘 Match</a>
           <a class="board-tab" href="/app/membership">💎 สมัครสมาชิก</a>
           <a class="board-tab" href="/app/earn">💰 รายได้เว็บ</a>
           <a class="board-tab" href="/app/profile">👤 โปรไฟล์</a>
@@ -891,6 +918,61 @@ function renderEarningsPage(session, profile, message = '') {
           <table><thead><tr><th>เวลา</th><th>ประเภท</th><th>จำนวน</th><th>หมายเหตุ</th></tr></thead><tbody>${latest || '<tr><td colspan="4">ยังไม่มีกิจกรรม</td></tr>'}</tbody></table>
         </div>
       </section>
+    </main>
+  `);
+}
+
+function renderMatchPage(session, message = '') {
+  const all = getAllDatingUsers().filter((u) => u.username !== session.username).slice(0, 20);
+  const cards = all.map((u) => `
+    <div class="stat">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <strong>${u.displayName || u.username}</strong>
+        <span class="pill">${u.location || '-'}</span>
+      </div>
+      <p class="muted" style="margin:6px 0">@${u.username} • ${u.gender || 'other'} • ${u.age || '-'}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <form method="POST" action="/app/match/action"><input type="hidden" name="to" value="${u.username}" /><input type="hidden" name="type" value="like" /><button class="btn btn-primary" type="submit">❤️ Like</button></form>
+        <form method="POST" action="/app/match/action"><input type="hidden" name="to" value="${u.username}" /><input type="hidden" name="type" value="pass" /><button class="btn" type="submit">❌ Pass</button></form>
+        <form method="POST" action="/app/match/action"><input type="hidden" name="to" value="${u.username}" /><input type="hidden" name="type" value="super_like" /><button class="btn" type="submit">⭐ Super Like</button></form>
+      </div>
+    </div>
+  `).join('');
+
+  const myMatches = matches.filter((m) => m.userA === session.username || m.userB === session.username)
+    .map((m) => {
+      const partner = m.userA === session.username ? m.userB : m.userA;
+      return `<tr><td>${m.at.toLocaleString('th-TH')}</td><td>${partner}</td><td><a class="btn" href="/app/chat/${m.id}">เปิดแชท</a></td></tr>`;
+    }).join('');
+
+  return htmlPage('Match - SodeClick V2', `
+    <main class="card" style="display:grid;gap:12px">
+      <div class="head"><h2 style="margin:0">Match</h2><a class="btn" href="/app">กลับบอร์ด</a></div>
+      ${message ? `<div class="stat" style="border-color:#86efac;background:#f0fdf4;color:#166534">${message}</div>` : ''}
+      <section class="grid">${cards || '<div class="stat">ยังไม่มีผู้ใช้ให้แนะนำ</div>'}</section>
+      <section class="stat" style="padding:0;overflow:hidden">
+        <div style="padding:12px 12px 0"><strong>รายการ Match ของฉัน</strong></div>
+        <div style="overflow:auto;padding:8px 12px 12px"><table><thead><tr><th>เวลา</th><th>คู่แมตช์</th><th>แชท</th></tr></thead><tbody>${myMatches || '<tr><td colspan="3">ยังไม่มี Match</td></tr>'}</tbody></table></div>
+      </section>
+    </main>
+  `);
+}
+
+function renderChatPage(session, matchId, message = '') {
+  const match = matches.find((m) => m.id === matchId && (m.userA === session.username || m.userB === session.username));
+  if (!match) return htmlPage('Chat - SodeClick V2', `<main class="card"><h2>ไม่พบแชท</h2><a class="btn" href="/app/match">กลับ Match</a></main>`);
+  const partner = match.userA === session.username ? match.userB : match.userA;
+  const msgs = chats.get(match.id) || [];
+  const rows = msgs.slice(-60).map((x) => `<div class="stat" style="margin-bottom:8px;background:${x.sender===session.username?'#eff6ff':'#fff'}"><strong>${x.sender}</strong> <span class="muted">${new Date(x.at).toLocaleString('th-TH')}</span><div style="margin-top:6px">${x.text}</div></div>`).join('');
+  return htmlPage('Chat - SodeClick V2', `
+    <main class="card" style="display:grid;gap:12px">
+      <div class="head"><h2 style="margin:0">แชทกับ ${partner}</h2><a class="btn" href="/app/match">กลับ Match</a></div>
+      ${message ? `<div class="stat" style="border-color:#86efac;background:#f0fdf4;color:#166534">${message}</div>` : ''}
+      <section>${rows || '<div class="stat">ยังไม่มีข้อความ</div>'}</section>
+      <form method="POST" action="/app/chat/${match.id}" style="display:grid;gap:8px">
+        <textarea name="message" style="width:100%;min-height:80px;border:1px solid #d1d5db;border-radius:10px;padding:10px" placeholder="พิมพ์ข้อความ..."></textarea>
+        <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" type="submit">ส่งข้อความ</button></div>
+      </form>
     </main>
   `);
 }
@@ -1557,6 +1639,77 @@ const server = http.createServer(async (req, res) => {
 
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(renderUserProfile(userSession, profile, 'บันทึกโปรไฟล์เรียบร้อยแล้ว'));
+    return;
+  }
+
+  if (path === '/app/match' && req.method === 'GET') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderMatchPage(userSession));
+    return;
+  }
+
+  if (path === '/app/match/action' && req.method === 'POST') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const body = await parseBody(req);
+    const to = (body.to || '').trim();
+    const type = (body.type || 'like').trim();
+    if (!to || to === userSession.username) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderMatchPage(userSession, 'ข้อมูลไม่ถูกต้อง'));
+      return;
+    }
+
+    userLikes.unshift({ from: userSession.username, to, type, at: new Date() });
+
+    const otherLiked = userLikes.find((x) => x.from === to && x.to === userSession.username && (x.type === 'like' || x.type === 'super_like'));
+    if (type !== 'pass' && otherLiked) {
+      const m = ensureMatch(userSession.username, to);
+      saveAppState();
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderMatchPage(userSession, `🎉 Match สำเร็จกับ ${to} แล้ว`));
+      return;
+    }
+
+    saveAppState();
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderMatchPage(userSession, type === 'pass' ? `ข้าม ${to}` : `ส่ง ${type} ให้ ${to} แล้ว`));
+    return;
+  }
+
+  if (path.startsWith('/app/chat/') && req.method === 'GET') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const matchId = path.replace('/app/chat/', '').trim();
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderChatPage(userSession, matchId));
+    return;
+  }
+
+  if (path.startsWith('/app/chat/') && req.method === 'POST') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const matchId = path.replace('/app/chat/', '').trim();
+    const body = await parseBody(req);
+    const text = (body.message || '').trim();
+    const match = matches.find((m) => m.id === matchId && (m.userA === userSession.username || m.userB === userSession.username));
+    if (!match) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderMatchPage(userSession, 'ไม่พบแชทที่ต้องการ'));
+      return;
+    }
+    if (!text) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderChatPage(userSession, matchId, 'กรุณาพิมพ์ข้อความก่อนส่ง'));
+      return;
+    }
+    if (!chats.has(matchId)) chats.set(matchId, []);
+    chats.get(matchId).push({ sender: userSession.username, text, at: new Date().toISOString() });
+    saveAppState();
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderChatPage(userSession, matchId, 'ส่งข้อความสำเร็จ'));
     return;
   }
 
