@@ -13,6 +13,7 @@ const adminAccounts = [
 
 const sessions = new Map();
 const userSessions = new Map();
+const userProfiles = new Map();
 
 let members = [
   { id: 'U001', name: 'Nina', email: 'nina@example.com', gender: 'female', status: 'active', createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3) },
@@ -94,6 +95,21 @@ function requireUserAuth(req, res) {
     return null;
   }
   return session;
+}
+
+function getOrCreateUserProfile(session) {
+  const key = session.username;
+  if (!userProfiles.has(key)) {
+    userProfiles.set(key, {
+      displayName: session.displayName || session.username,
+      bio: 'สวัสดี เราคือสมาชิก SodeClick ✨',
+      location: 'Thailand',
+      status: 'online',
+      interests: 'เพลง, แชท, เกม',
+      updatedAt: new Date(),
+    });
+  }
+  return userProfiles.get(key);
 }
 
 function hasPermission(role, action) {
@@ -405,7 +421,7 @@ function renderUserApp(session) {
           <a class="board-tab" href="/app?tab=games">🎮 เกมส์</a>
         </nav>
         <div class="top-actions">
-          <a class="top-btn profile" href="/app?tab=profile">👤 โปรไฟล์</a>
+          <a class="top-btn profile" href="/app/profile">👤 โปรไฟล์</a>
           <a class="top-btn logout" href="/logout">⎋ Logout</a>
         </div>
       </div>
@@ -560,6 +576,72 @@ function renderUserApp(session) {
 
       renderFeed();
     </script>
+  `);
+}
+
+function renderUserProfile(session, profile, message = '') {
+  return htmlPage('โปรไฟล์ - SodeClick V2', `
+    <main class="card" style="display:grid;gap:12px">
+      <div class="head">
+        <h2 style="margin:0">โปรไฟล์ผู้ใช้</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn" href="/app">กลับไปบอร์ด</a>
+          <a class="btn" href="/logout">Logout</a>
+        </div>
+      </div>
+
+      ${message ? `<div class="stat" style="border-color:#86efac;background:#f0fdf4;color:#166534">${message}</div>` : ''}
+
+      <section class="stat" style="display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center">
+        <div style="width:100px;height:100px;border-radius:999px;background:linear-gradient(135deg,#bfdbfe,#fbcfe8)"></div>
+        <div>
+          <div style="font-size:22px;font-weight:800">${profile.displayName}</div>
+          <div class="muted">@${session.username} • สถานะ: ${profile.status}</div>
+          <div style="margin-top:6px">${profile.bio}</div>
+        </div>
+      </section>
+
+      <section class="stat">
+        <form method="POST" action="/app/profile" style="display:grid;gap:10px">
+          <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+            <div>
+              <label>ชื่อแสดงผล</label>
+              <input name="displayName" value="${profile.displayName}" required />
+            </div>
+            <div>
+              <label>สถานะ</label>
+              <select name="status">
+                <option value="online" ${profile.status === 'online' ? 'selected' : ''}>online</option>
+                <option value="busy" ${profile.status === 'busy' ? 'selected' : ''}>busy</option>
+                <option value="offline" ${profile.status === 'offline' ? 'selected' : ''}>offline</option>
+              </select>
+            </div>
+            <div>
+              <label>ที่อยู่/จังหวัด</label>
+              <input name="location" value="${profile.location || ''}" />
+            </div>
+            <div>
+              <label>ความสนใจ</label>
+              <input name="interests" value="${profile.interests || ''}" />
+            </div>
+          </div>
+          <div>
+            <label>Bio</label>
+            <textarea name="bio" style="width:100%;min-height:90px;border:1px solid #d1d5db;border-radius:10px;padding:10px">${profile.bio || ''}</textarea>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-primary" type="submit">บันทึกโปรไฟล์</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="grid">
+        <div class="stat"><div class="k">โพสต์ทั้งหมด</div><div class="v">12</div></div>
+        <div class="stat"><div class="k">ไลก์รวม</div><div class="v">94</div></div>
+        <div class="stat"><div class="k">คอมเมนต์รวม</div><div class="v">38</div></div>
+        <div class="stat"><div class="k">อัปเดตล่าสุด</div><div class="v">${new Date(profile.updatedAt || new Date()).toLocaleString('th-TH')}</div></div>
+      </section>
+    </main>
   `);
 }
 
@@ -1055,6 +1137,34 @@ const server = http.createServer(async (req, res) => {
 
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(renderUserLogin('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'));
+    return;
+  }
+
+  if (path === '/app/profile' && req.method === 'GET') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const profile = getOrCreateUserProfile(userSession);
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderUserProfile(userSession, profile));
+    return;
+  }
+
+  if (path === '/app/profile' && req.method === 'POST') {
+    const userSession = requireUserAuth(req, res);
+    if (!userSession) return;
+    const body = await parseBody(req);
+    const profile = getOrCreateUserProfile(userSession);
+    profile.displayName = (body.displayName || userSession.displayName || userSession.username).trim();
+    profile.bio = (body.bio || '').trim();
+    profile.location = (body.location || '').trim();
+    profile.interests = (body.interests || '').trim();
+    profile.status = ['online', 'busy', 'offline'].includes(body.status) ? body.status : 'online';
+    profile.updatedAt = new Date();
+
+    userSession.displayName = profile.displayName;
+
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderUserProfile(userSession, profile, 'บันทึกโปรไฟล์เรียบร้อยแล้ว'));
     return;
   }
 
