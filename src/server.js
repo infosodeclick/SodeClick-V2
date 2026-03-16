@@ -361,20 +361,20 @@ function renderUserApp(session) {
           <div class="composer-actions">
             <div class="tool-row">
               <button type="button" class="icon-btn" id="pickImageBtn">📷 รูป</button>
-              <select id="emojiSelect" class="icon-btn" style="min-width:120px">
+              <select id="emojiSelect" class="icon-btn" style="width:120px;max-width:120px">
                 <option value="">😊 อีโมจิ</option>
-                <option value="😊">😊 ยิ้ม</option>
-                <option value="😂">😂 ขำ</option>
-                <option value="❤️">❤️ หัวใจ</option>
-                <option value="🔥">🔥 ไฟ</option>
-                <option value="👍">👍 ถูกใจ</option>
-                <option value="🎉">🎉 ฉลอง</option>
-                <option value="🥰">🥰 น่ารัก</option>
-                <option value="😎">😎 เท่</option>
-                <option value="💙">💙 ฟ้า</option>
-                <option value="💬">💬 คอมเมนต์</option>
-                <option value="✨">✨ วิ้ง</option>
-                <option value="🙏">🙏 ขอบคุณ</option>
+                <option value="😊">😊</option>
+                <option value="😂">😂</option>
+                <option value="❤️">❤️</option>
+                <option value="🔥">🔥</option>
+                <option value="👍">👍</option>
+                <option value="🎉">🎉</option>
+                <option value="🥰">🥰</option>
+                <option value="😎">😎</option>
+                <option value="💙">💙</option>
+                <option value="💬">💬</option>
+                <option value="✨">✨</option>
+                <option value="🙏">🙏</option>
               </select>
               <input id="imageInput" type="file" accept="image/*" class="hidden" />
             </div>
