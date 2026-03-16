@@ -13,6 +13,7 @@ const messagesFile = path.join(dataDir, 'messages.json');
 const blocksFile = path.join(dataDir, 'blocks.json');
 const reportsFile = path.join(dataDir, 'reports.json');
 const giftsFile = path.join(dataDir, 'gift-transactions.json');
+const coinTxFile = path.join(dataDir, 'coin-transactions.json');
 
 const userSessions = new Map(); // sid -> { email, username }
 
@@ -26,6 +27,7 @@ function ensureData() {
   if (!fs.existsSync(blocksFile)) fs.writeFileSync(blocksFile, '[]', 'utf8');
   if (!fs.existsSync(reportsFile)) fs.writeFileSync(reportsFile, '[]', 'utf8');
   if (!fs.existsSync(giftsFile)) fs.writeFileSync(giftsFile, '[]', 'utf8');
+  if (!fs.existsSync(coinTxFile)) fs.writeFileSync(coinTxFile, '[]', 'utf8');
 }
 
 function readJson(file) {
@@ -183,7 +185,7 @@ function profilePage(user, message = '') {
     <main class="card" style="display:grid;gap:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
         <h2 style="margin:0">โปรไฟล์ผู้ใช้</h2>
-        <div style="display:flex;gap:8px"><a class="btn" href="/match">Match</a><a class="btn" href="/">หน้าแรก</a><a class="btn" href="/logout">Logout</a></div>
+        <div style="display:flex;gap:8px"><a class="btn" href="/wallet">Wallet</a><a class="btn" href="/match">Match</a><a class="btn" href="/">หน้าแรก</a><a class="btn" href="/logout">Logout</a></div>
       </div>
       ${message ? `<div class="ok">${message}</div>` : ''}
       <section class="card" style="padding:14px;border-radius:12px">
@@ -308,6 +310,44 @@ function renderChatPage(me, matchId, info = '') {
         <form method="POST" action="/chat/${matchId}/block"><button class="btn" type="submit">⛔ Block</button></form>
         <form method="POST" action="/chat/${matchId}/report"><button class="btn" type="submit">🚩 Report</button></form>
       </div>
+    </main>
+  `);
+}
+
+function renderWalletPage(me, info = '') {
+  const tx = readJson(coinTxFile).filter((t) => t.username === me.username).slice(-50).reverse();
+  const rows = tx.map((t) => `<tr><td>${new Date(t.at).toLocaleString('th-TH')}</td><td>${t.type}</td><td>${t.amount > 0 ? '+' + t.amount : t.amount}</td><td>${t.note || ''}</td></tr>`).join('');
+
+  const packages = [
+    { id: 'small', coins: 100, price: 29 },
+    { id: 'medium', coins: 500, price: 99 },
+    { id: 'large', coins: 1200, price: 199 },
+    { id: 'mega', coins: 3000, price: 399 },
+  ];
+
+  const packCards = packages.map((p) => `
+    <form method="POST" action="/wallet/topup" class="card" style="padding:12px;border-radius:12px">
+      <input type="hidden" name="packageId" value="${p.id}" />
+      <input type="hidden" name="coins" value="${p.coins}" />
+      <input type="hidden" name="price" value="${p.price}" />
+      <strong>${p.id.toUpperCase()}</strong>
+      <div class="muted" style="margin:6px 0">${p.coins} coins • ${p.price} บาท</div>
+      <button class="btn btn-primary" type="submit">เติมแพ็กนี้</button>
+    </form>
+  `).join('');
+
+  return htmlPage('Wallet / Coins', `
+    <main class="card" style="display:grid;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <h2 style="margin:0">Wallet / Coins</h2>
+        <div style="display:flex;gap:8px"><span class="ok" style="padding:8px 10px">เหรียญคงเหลือ: ${me.coins || 0}</span><a class="btn" href="/profile">โปรไฟล์</a><a class="btn" href="/match">Match</a></div>
+      </div>
+      ${info ? `<div class="ok">${info}</div>` : ''}
+      <section><strong>แพ็กเกจเหรียญ</strong><div class="grid" style="margin-top:8px">${packCards}</div></section>
+      <section class="card" style="padding:0;border-radius:12px;overflow:hidden">
+        <div style="padding:12px"><strong>ประวัติธุรกรรม</strong></div>
+        <div style="overflow:auto;padding:0 12px 12px"><table><thead><tr><th>เวลา</th><th>ประเภท</th><th>จำนวน</th><th>หมายเหตุ</th></tr></thead><tbody>${rows || '<tr><td colspan="4">ยังไม่มีรายการ</td></tr>'}</tbody></table></div>
+      </section>
     </main>
   `);
 }
@@ -627,11 +667,21 @@ const server = http.createServer((req, res) => {
     const users = readJson(usersFile);
     const idx = users.findIndex((u) => u.email === me.email || u.username === me.username);
     if (idx >= 0) {
+      const boostCost = 30;
+      if ((users[idx].coins || 0) < boostCost) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderMatchPage(users[idx] || me, {}, 'เหรียญไม่พอสำหรับ Boost (ต้องใช้ 30)'));
+        return;
+      }
+      users[idx].coins = (users[idx].coins || 0) - boostCost;
       users[idx].boostUntil = Date.now() + 30 * 60 * 1000;
       writeJson(usersFile, users);
+      const tx = readJson(coinTxFile);
+      tx.push({ id: `CTX${Date.now()}`, username: me.username, type: 'boost', amount: -boostCost, note: 'Boost Profile 30 นาที', at: Date.now() });
+      writeJson(coinTxFile, tx);
     }
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(renderMatchPage(users[idx] || me, {}, 'Boost โปรไฟล์แล้ว (30 นาที demo)'));
+    res.end(renderMatchPage(users[idx] || me, {}, 'Boost โปรไฟล์แล้ว (30 นาที)'));
     return;
   }
 
@@ -710,6 +760,9 @@ const server = http.createServer((req, res) => {
       const gifts = readJson(giftsFile);
       gifts.push({ id: `GTR${Date.now()}`, matchId, from: me.username, giftId, price, at: Date.now() });
       writeJson(giftsFile, gifts);
+      const tx = readJson(coinTxFile);
+      tx.push({ id: `CTX${Date.now()}`, username: me.username, type: 'gift', amount: -price, note: `ส่งของขวัญ ${giftId}`, at: Date.now() });
+      writeJson(coinTxFile, tx);
       const messages = readJson(messagesFile);
       messages.push({ id: `MSG${Date.now()}`, matchId, sender: me.username, text: `ส่งของขวัญ ${giftId}`, at: Date.now(), read: false });
       writeJson(messagesFile, messages);
@@ -760,6 +813,52 @@ const server = http.createServer((req, res) => {
     }
     res.writeHead(302, { Location: '/match' });
     res.end();
+    return;
+  }
+
+  if (url.pathname === '/wallet' && req.method === 'GET') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(renderWalletPage(me));
+    return;
+  }
+
+  if (url.pathname === '/wallet/topup' && req.method === 'POST') {
+    const me = getSessionUser(req);
+    if (!me) {
+      res.writeHead(302, { Location: '/login' });
+      res.end();
+      return;
+    }
+    let raw = '';
+    req.on('data', (c) => (raw += c));
+    req.on('end', () => {
+      const body = parseForm(raw);
+      const addCoins = Number(body.coins || 0);
+      const price = Number(body.price || 0);
+      const users = readJson(usersFile);
+      const idx = users.findIndex((u) => u.username === me.username);
+      if (idx < 0 || addCoins <= 0) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderWalletPage(me, 'ข้อมูลแพ็กเกจไม่ถูกต้อง'));
+        return;
+      }
+      users[idx].coins = (users[idx].coins || 0) + addCoins;
+      users[idx].updatedAt = Date.now();
+      writeJson(usersFile, users);
+
+      const tx = readJson(coinTxFile);
+      tx.push({ id: `CTX${Date.now()}`, username: me.username, type: 'topup', amount: addCoins, note: `เติมเหรียญราคา ${price} บาท`, at: Date.now() });
+      writeJson(coinTxFile, tx);
+
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderWalletPage(users[idx], `เติมเหรียญสำเร็จ +${addCoins}`));
+    });
     return;
   }
 
