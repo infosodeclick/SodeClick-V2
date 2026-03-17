@@ -118,6 +118,7 @@ async function handleAuthRoutes(ctx) {
       bio: '', interests: '', status: 'online', coins: 0,
       vipStatus: false, verifiedBadge: false, emailVerified: true, phoneVerified: false,
       occupation: '', relationshipGoal: 'friend', framesOwned: ['F001'], activeFrame: '',
+      role: 'member',
       createdAt: Date.now(),
     });
     writeJson(usersFile, users);

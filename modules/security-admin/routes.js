@@ -21,6 +21,7 @@ async function handleSecurityAdminRoutes(ctx) {
     renderAdminFrames,
     renderAdminReports,
     renderAdminThreads,
+    adminUsersFile,
   } = deps;
 
   if (url.pathname === '/admin/login' && req.method === 'GET') {
@@ -33,7 +34,9 @@ async function handleSecurityAdminRoutes(ctx) {
     const body = parseForm(await parseBody(req));
     const username = String(body.username || '').trim();
     const password = String(body.password || '').trim();
-    if (username === 'admin' && password === '123456') {
+    const admins = readJson(adminUsersFile);
+    const found = admins.find((a) => a.username === username && a.password === password);
+    if (found || (username === 'admin' && password === '123456')) {
       const aid = crypto.randomBytes(24).toString('hex');
       adminSessions.set(aid, { username: 'admin', role: 'admin', at: Date.now() });
       res.writeHead(302, { Location: '/admin/dashboard', 'Set-Cookie': `aid=${aid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=28800` });

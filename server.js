@@ -23,6 +23,8 @@ const giftsFile = path.join(dataDir, 'gift-transactions.json');
 const coinTxFile = path.join(dataDir, 'coin-transactions.json');
 const frameTxFile = path.join(dataDir, 'frame-transactions.json');
 const boardPostsFile = path.join(dataDir, 'board-posts.json');
+const adminUsersFile = path.join(dataDir, 'admin-users.json');
+const memberUsersFile = path.join(dataDir, 'member-users.json');
 
 const userSessions = new Map(); // sid -> { email, username }
 const adminSessions = new Map(); // aid -> { username, role }
@@ -55,6 +57,8 @@ function ensureData() {
   if (!fs.existsSync(coinTxFile)) fs.writeFileSync(coinTxFile, '[]', 'utf8');
   if (!fs.existsSync(frameTxFile)) fs.writeFileSync(frameTxFile, '[]', 'utf8');
   if (!fs.existsSync(boardPostsFile)) fs.writeFileSync(boardPostsFile, '[]', 'utf8');
+  if (!fs.existsSync(adminUsersFile)) fs.writeFileSync(adminUsersFile, '[]', 'utf8');
+  if (!fs.existsSync(memberUsersFile)) fs.writeFileSync(memberUsersFile, '[]', 'utf8');
 
   // seed test user for stable login on fresh deployments
   const users = readJson(usersFile);
@@ -82,10 +86,45 @@ function ensureData() {
       relationshipGoal: 'friend',
       framesOwned: ['F001'],
       activeFrame: '',
+      role: 'member',
       createdAt: Date.now(),
     });
-    writeJson(usersFile, users);
   }
+
+  const hasAdminUser = users.some((u) => u.username === 'admin');
+  if (!hasAdminUser) {
+    users.push({
+      userId: 'USRADMIN1',
+      username: 'admin',
+      displayName: 'Administrator',
+      email: 'admin@sodeclick.local',
+      password: '123456',
+      gender: 'other',
+      age: 30,
+      location: 'Bangkok',
+      lookingFor: 'all',
+      bio: 'System admin',
+      interests: '',
+      status: 'online',
+      coins: 0,
+      vipStatus: false,
+      verifiedBadge: true,
+      emailVerified: true,
+      phoneVerified: false,
+      occupation: 'Admin',
+      relationshipGoal: 'friend',
+      framesOwned: ['F001'],
+      activeFrame: '',
+      role: 'admin',
+      createdAt: Date.now(),
+    });
+  }
+
+  // normalize role and sync split storage files every startup
+  users.forEach((u) => {
+    if (!u.role) u.role = u.username === 'admin' ? 'admin' : 'member';
+  });
+  writeJson(usersFile, users);
 }
 
 function readJson(file) {
@@ -98,6 +137,14 @@ function readJson(file) {
 
 function writeJson(file, payload) {
   fs.writeFileSync(file, JSON.stringify(payload, null, 2), 'utf8');
+
+  // keep user storage organized: split admin/member snapshots from users.json
+  if (file === usersFile && Array.isArray(payload)) {
+    const admins = payload.filter((u) => u && (u.role === 'admin' || u.username === 'admin'));
+    const members = payload.filter((u) => u && !(u.role === 'admin' || u.username === 'admin'));
+    fs.writeFileSync(adminUsersFile, JSON.stringify(admins, null, 2), 'utf8');
+    fs.writeFileSync(memberUsersFile, JSON.stringify(members, null, 2), 'utf8');
+  }
 }
 
 function parseForm(body) {
@@ -759,6 +806,8 @@ const server = http.createServer(async (req, res) => {
     reportsFile,
     blocksFile,
     boardPostsFile,
+    adminUsersFile,
+    memberUsersFile,
     coinTxFile,
     userSessions,
     adminSessions,
