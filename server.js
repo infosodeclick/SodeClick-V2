@@ -303,7 +303,8 @@ function verifyPage(email = '', error = '', info = '') {
 
 function loginPage(error = '', info = '') {
   return htmlPage('เข้าสู่ระบบ', `
-    <main class="card" style="display:grid;gap:12px;max-width:560px;width:100%;margin:10vh auto 0">
+    <div style="min-height:calc(100vh - 32px);display:flex;align-items:center;justify-content:center">
+    <main class="card" style="display:grid;gap:12px;max-width:560px;width:100%;margin:0 auto">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">เข้าสู่ระบบ</h2><a class="btn" href="/">กลับหน้าแรก</a></div>
       ${error ? `<div class="err">${error}</div>` : ''}
       ${info ? `<div class="ok">${info}</div>` : ''}
@@ -318,6 +319,7 @@ function loginPage(error = '', info = '') {
       </form>
       <a class="btn btn-success" style="min-height:44px;font-weight:800" href="/auth/google">🔐 เข้าสู่ระบบด้วย Google (demo)</a>
     </main>
+    </div>
   `);
 }
 
