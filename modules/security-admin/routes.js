@@ -21,7 +21,9 @@ async function handleSecurityAdminRoutes(ctx) {
     renderAdminFrames,
     renderAdminReports,
     renderAdminThreads,
+    renderAdminStore,
     adminUsersFile,
+    storeItemsFile,
   } = deps;
 
   if (url.pathname === '/admin/login' && req.method === 'GET') {
@@ -80,6 +82,48 @@ async function handleSecurityAdminRoutes(ctx) {
     if (url.pathname === '/admin/frames') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminFrames()); return true; }
     if (url.pathname === '/admin/reports') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminReports()); return true; }
     if (url.pathname === '/admin/threads') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminThreads()); return true; }
+    if (url.pathname === '/admin/store' && req.method === 'GET') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminStore()); return true; }
+    if (url.pathname === '/admin/store/create' && req.method === 'POST') {
+      const body = parseForm(await parseBody(req));
+      const id = String(body.id || '').trim().toUpperCase();
+      const name = String(body.name || '').trim();
+      const type = String(body.type || 'frame').trim().toLowerCase();
+      const price = Math.max(0, Number(body.price || 0));
+      const items = readJson(storeItemsFile);
+      if (!id || !name || items.find((x) => x.id === id)) {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(renderAdminStore('เพิ่มสินค้าไม่สำเร็จ: รหัสซ้ำหรือข้อมูลไม่ครบ'));
+        return true;
+      }
+      items.push({ id, name, type, price, active: true });
+      writeJson(storeItemsFile, items);
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderAdminStore(`เพิ่มสินค้า ${id} สำเร็จ`));
+      return true;
+    }
+    if (url.pathname === '/admin/store/toggle' && req.method === 'POST') {
+      const body = parseForm(await parseBody(req));
+      const id = String(body.id || '').trim().toUpperCase();
+      const items = readJson(storeItemsFile);
+      const idx = items.findIndex((x) => x.id === id);
+      if (idx >= 0) items[idx].active = !(items[idx].active !== false);
+      writeJson(storeItemsFile, items);
+      res.writeHead(302, { Location: '/admin/store' });
+      res.end();
+      return true;
+    }
+    if (url.pathname === '/admin/store/price' && req.method === 'POST') {
+      const body = parseForm(await parseBody(req));
+      const id = String(body.id || '').trim().toUpperCase();
+      const price = Math.max(0, Number(body.price || 0));
+      const items = readJson(storeItemsFile);
+      const idx = items.findIndex((x) => x.id === id);
+      if (idx >= 0) items[idx].price = price;
+      writeJson(storeItemsFile, items);
+      res.writeHead(302, { Location: '/admin/store' });
+      res.end();
+      return true;
+    }
   }
 
   if (url.pathname === '/security' && req.method === 'GET') {

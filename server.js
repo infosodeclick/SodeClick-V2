@@ -23,6 +23,7 @@ const giftsFile = path.join(dataDir, 'gift-transactions.json');
 const coinTxFile = path.join(dataDir, 'coin-transactions.json');
 const frameTxFile = path.join(dataDir, 'frame-transactions.json');
 const boardPostsFile = path.join(dataDir, 'board-posts.json');
+const storeItemsFile = path.join(dataDir, 'store-items.json');
 const adminUsersFile = path.join(dataDir, 'admin-users.json');
 const memberUsersFile = path.join(dataDir, 'member-users.json');
 
@@ -125,6 +126,22 @@ function ensureData() {
     if (!u.role) u.role = u.username === 'admin' ? 'admin' : 'member';
   });
   writeJson(usersFile, users);
+
+  const storeItems = readJson(storeItemsFile);
+  if (!Array.isArray(storeItems) || storeItems.length === 0) {
+    writeJson(storeItemsFile, [
+      { id: 'S001', name: 'Sky Blue Frame', type: 'frame', price: 0, active: true },
+      { id: 'S002', name: 'Pink Glow Frame', type: 'frame', price: 30, active: true },
+      { id: 'S003', name: 'Neon Heart Frame', type: 'frame', price: 60, active: true },
+      { id: 'S004', name: 'Golden VIP Frame', type: 'frame', price: 120, active: true },
+      { id: 'S005', name: 'Royal Purple Frame', type: 'frame', price: 90, active: true },
+      { id: 'S006', name: 'Emerald Shine Frame', type: 'frame', price: 75, active: true },
+      { id: 'S007', name: 'Fire Red Frame', type: 'frame', price: 55, active: true },
+      { id: 'S008', name: 'Ocean Wave Frame', type: 'frame', price: 45, active: true },
+      { id: 'S009', name: 'Dark Mode Frame', type: 'frame', price: 40, active: true },
+      { id: 'S010', name: 'Diamond Elite Frame', type: 'frame', price: 150, active: true },
+    ]);
+  }
 }
 
 function readJson(file) {
@@ -494,6 +511,7 @@ function adminShell(title, body) {
         <a class="btn" href="/admin/frames">กรอบ</a>
         <a class="btn" href="/admin/reports">รายงาน</a>
         <a class="btn" href="/admin/threads">กระทู้</a>
+        <a class="btn" href="/admin/store">ร้านค้า</a>
         <a class="btn btn-danger" href="/admin/logout">ออกจากระบบ</a>
       </nav>
       ${body}
@@ -657,6 +675,35 @@ function renderAdminThreads() {
   return adminShell('จัดการกระทู้', `<h2 style="margin:0">จัดการกระทู้</h2><div style="overflow:auto"><table><thead><tr><th>เวลา</th><th>Author</th><th>Title</th><th>Category</th><th>Likes</th><th>Comments</th><th>Reports</th></tr></thead><tbody>${rows||'<tr><td colspan="7">ไม่มีกระทู้</td></tr>'}</tbody></table></div>`);
 }
 
+function renderAdminStore(info = '') {
+  const items = readJson(storeItemsFile).slice().sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  const rows = items.map((x) => `
+    <tr>
+      <td>${x.id}</td><td>${x.name}</td><td>${x.type || 'frame'}</td><td>${x.price || 0}</td><td>${x.active === false ? 'ปิดขาย' : 'เปิดขาย'}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        <form method="POST" action="/admin/store/toggle"><input type="hidden" name="id" value="${x.id}"/><button class="btn" type="submit">${x.active === false ? 'เปิดขาย' : 'ปิดขาย'}</button></form>
+        <form method="POST" action="/admin/store/price" style="display:flex;gap:6px"><input type="hidden" name="id" value="${x.id}"/><input type="number" min="0" name="price" value="${Number(x.price || 0)}" style="width:90px"/><button class="btn" type="submit">อัปเดตราคา</button></form>
+      </td>
+    </tr>
+  `).join('');
+
+  return adminShell('จัดการร้านค้า', `
+    <h2 style="margin:0">จัดการร้านค้า</h2>
+    ${info ? `<div class="ok">${info}</div>` : ''}
+    <section class="card" style="padding:12px;border-radius:12px;display:grid;gap:10px">
+      <strong>เพิ่มสินค้าใหม่</strong>
+      <form method="POST" action="/admin/store/create" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+        <div style="min-width:120px"><label>รหัสสินค้า</label><input name="id" placeholder="S011" required /></div>
+        <div style="min-width:220px;flex:1"><label>ชื่อสินค้า</label><input name="name" required /></div>
+        <div style="min-width:120px"><label>ประเภท</label><select name="type"><option value="frame">frame</option></select></div>
+        <div style="min-width:110px"><label>ราคา</label><input type="number" min="0" name="price" value="0" required /></div>
+        <div><button class="btn" type="submit">เพิ่มสินค้า</button></div>
+      </form>
+    </section>
+    <div style="overflow:auto"><table><thead><tr><th>ID</th><th>ชื่อ</th><th>ประเภท</th><th>ราคา</th><th>สถานะ</th><th>จัดการ</th></tr></thead><tbody>${rows || '<tr><td colspan="6">ยังไม่มีสินค้า</td></tr>'}</tbody></table></div>
+  `);
+}
+
 function getAdminSession(req) {
   const aid = parseCookies(req).aid;
   if (!aid) return null;
@@ -769,12 +816,9 @@ function renderBoardPage(me, q = {}, info = '') {
 }
 
 function renderShopPage(me, info = '') {
-  const catalog = [
-    { id: 'F001', name: 'Sky Blue', price: 0 },
-    { id: 'F002', name: 'Pink Glow', price: 30 },
-    { id: 'F003', name: 'Neon Heart', price: 60 },
-    { id: 'F004', name: 'Golden VIP', price: 120 },
-  ];
+  const catalog = readJson(storeItemsFile)
+    .filter((x) => x && x.active !== false)
+    .map((x) => ({ id: x.id, name: x.name, price: Number(x.price || 0) }));
   const owned = Array.isArray(me.framesOwned) ? me.framesOwned : [];
   const cards = catalog.map((f) => {
     const isOwned = owned.includes(f.id);
@@ -920,6 +964,7 @@ const server = http.createServer(async (req, res) => {
     reportsFile,
     blocksFile,
     boardPostsFile,
+    storeItemsFile,
     adminUsersFile,
     memberUsersFile,
     coinTxFile,
@@ -945,6 +990,7 @@ const server = http.createServer(async (req, res) => {
     renderAdminFrames,
     renderAdminReports,
     renderAdminThreads,
+    renderAdminStore,
     isSpamAction,
     containsBlockedWords,
     frameTxFile,
