@@ -1015,6 +1015,18 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/' && req.method === 'GET') {
+    const admin = getAdminSession(req);
+    if (admin) {
+      res.writeHead(302, { Location: '/admin/dashboard' });
+      res.end();
+      return;
+    }
+    const me = getSessionUser(req);
+    if (me) {
+      res.writeHead(302, { Location: '/profile' });
+      res.end();
+      return;
+    }
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(homePage());
     return;
