@@ -303,7 +303,7 @@ function verifyPage(email = '', error = '', info = '') {
 
 function loginPage(error = '', info = '') {
   return htmlPage('เข้าสู่ระบบ', `
-    <main class="card" style="display:grid;gap:12px;max-width:560px">
+    <main class="card" style="display:grid;gap:12px;max-width:560px;width:100%;margin:10vh auto 0">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">เข้าสู่ระบบ</h2><a class="btn" href="/">กลับหน้าแรก</a></div>
       ${error ? `<div class="err">${error}</div>` : ''}
       ${info ? `<div class="ok">${info}</div>` : ''}
