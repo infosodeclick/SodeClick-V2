@@ -1,0 +1,29 @@
+[
+  {
+    "userId": "USRADMIN1",
+    "username": "admin",
+    "displayName": "Administrator",
+    "email": "admin@sodeclick.local",
+    "password": "123456",
+    "gender": "other",
+    "age": 30,
+    "location": "Bangkok",
+    "lookingFor": "all",
+    "bio": "System admin",
+    "interests": "",
+    "status": "online",
+    "coins": 0,
+    "vipStatus": false,
+    "verifiedBadge": true,
+    "emailVerified": true,
+    "phoneVerified": false,
+    "occupation": "Admin",
+    "relationshipGoal": "friend",
+    "framesOwned": [
+      "F001"
+    ],
+    "activeFrame": "",
+    "role": "admin",
+    "createdAt": 1773709808935
+  }
+]

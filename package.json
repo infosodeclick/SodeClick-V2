@@ -4,8 +4,6 @@
   "private": true,
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "migrate:json2sql": "node scripts/migrate-json-to-sql.js",
-    "smoke": "powershell -ExecutionPolicy Bypass -File scripts/regression-smoke.ps1"
+    "start": "node server.js"
   }
 }
