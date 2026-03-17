@@ -150,6 +150,10 @@ function htmlPage(title, body) {
     .btn:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(15,23,42,.1)}
     .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .btn-primary{border:0;color:#fff;background:linear-gradient(135deg,var(--brand1),var(--brand2))}
+    .btn-menu{background:#eef2ff;border-color:#c7d2fe;color:#3730a3}
+    .btn-success{background:#ecfdf3;border-color:#86efac;color:#166534}
+    .btn-danger{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+    .btn-warn{background:#fff7ed;border-color:#fdba74;color:#9a3412}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
     input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:10px;font:inherit;background:#fff}
     input:focus,select:focus,textarea:focus{outline:none;border-color:#93c5fd;box-shadow:0 0 0 3px rgba(147,197,253,.25)}
@@ -178,9 +182,9 @@ function homePage() {
         <div style="font-weight:800">SodeClick V2</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <a class="btn btn-primary" href="/register">สมัครสมาชิก</a>
-          <a class="btn" href="/login">เข้าสู่ระบบ</a>
-          <a class="btn" href="/forgot-password">ลืมรหัสผ่าน</a>
-          <a class="btn" href="/auth/google">เข้าสู่ระบบด้วย Google</a>
+          <a class="btn btn-menu" href="/login">เข้าสู่ระบบ</a>
+          <a class="btn btn-warn" href="/forgot-password">ลืมรหัสผ่าน</a>
+          <a class="btn btn-success" href="/auth/google">เข้าสู่ระบบด้วย Google</a>
         </div>
       </nav>
       <section class="card" style="padding:16px;border-radius:12px">
@@ -267,7 +271,7 @@ function profilePage(user, message = '') {
     <main class="card" style="display:grid;gap:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
         <h2 style="margin:0">โปรไฟล์ผู้ใช้</h2>
-        <div class="toolbar"><a class="btn" href="/security">ความปลอดภัย</a><a class="btn" href="/board">เว็บบอร์ด</a><a class="btn" href="/vip">VIP</a><a class="btn" href="/wallet">กระเป๋า</a><a class="btn" href="/match">แมตช์</a><a class="btn" href="/">หน้าแรก</a><a class="btn" href="/logout">ออกจากระบบ</a></div>
+        <div class="toolbar"><a class="btn btn-menu" href="/security">ความปลอดภัย</a><a class="btn btn-menu" href="/board">เว็บบอร์ด</a><a class="btn btn-success" href="/vip">VIP</a><a class="btn btn-menu" href="/wallet">กระเป๋า</a><a class="btn btn-menu" href="/match">แมตช์</a><a class="btn" href="/">หน้าแรก</a><a class="btn btn-danger" href="/logout">ออกจากระบบ</a></div>
       </div>
       ${message ? `<div class="ok">${message}</div>` : ''}
       <section class="card" style="padding:14px;border-radius:12px">
@@ -326,8 +330,8 @@ function renderMatchPage(me, query, info = '') {
       <div class="muted" style="margin-top:4px">@${u.username} • ${u.gender || 'other'} • ${u.age || '-'}</div>
       <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
         <form method="POST" action="/match/action"><input type="hidden" name="target" value="${u.username}"/><input type="hidden" name="type" value="like"/><button class="btn btn-primary" type="submit">❤️ ไลก์</button></form>
-        <form method="POST" action="/match/action"><input type="hidden" name="target" value="${u.username}"/><input type="hidden" name="type" value="super_like"/><button class="btn" type="submit">⭐ ซูเปอร์ไลก์</button></form>
-        <form method="POST" action="/match/action"><input type="hidden" name="target" value="${u.username}"/><input type="hidden" name="type" value="pass"/><button class="btn" type="submit">❌ ข้าม</button></form>
+        <form method="POST" action="/match/action"><input type="hidden" name="target" value="${u.username}"/><input type="hidden" name="type" value="super_like"/><button class="btn btn-success" type="submit">⭐ ซูเปอร์ไลก์</button></form>
+        <form method="POST" action="/match/action"><input type="hidden" name="target" value="${u.username}"/><input type="hidden" name="type" value="pass"/><button class="btn btn-warn" type="submit">❌ ข้าม</button></form>
       </div>
     </div>
   `).join('');
@@ -337,7 +341,7 @@ function renderMatchPage(me, query, info = '') {
 
   return htmlPage('ค้นหาและแมตช์', `
     <main class="card" style="display:grid;gap:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">ค้นหาและแมตช์</h2><div class="toolbar"><a class="btn" href="/profile">โปรไฟล์</a><a class="btn" href="/logout">ออกจากระบบ</a></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">ค้นหาและแมตช์</h2><div class="toolbar"><a class="btn btn-menu" href="/profile">โปรไฟล์</a><a class="btn btn-danger" href="/logout">ออกจากระบบ</a></div></div>
       ${info ? `<div class="ok">${info}</div>` : ''}
       <section class="card" style="padding:12px;border-radius:12px">
         <form method="GET" action="/match" class="grid">
@@ -377,7 +381,7 @@ function renderChatPage(me, matchId, info = '') {
 
   return htmlPage('แชท', `
     <main class="card" style="display:grid;gap:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">แชทกับ ${partner}</h2><div class="toolbar"><a class="btn" href="/match">กลับหน้าแมตช์</a><a class="btn" href="/logout">ออกจากระบบ</a></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">แชทกับ ${partner}</h2><div class="toolbar"><a class="btn btn-menu" href="/match">กลับหน้าแมตช์</a><a class="btn btn-danger" href="/logout">ออกจากระบบ</a></div></div>
       ${info ? `<div class="ok">${info}</div>` : ''}
       <div style="display:grid;gap:8px">${rows || '<div class="muted">ยังไม่มีข้อความ</div>'}</div>
       <div class="card" style="padding:10px;border-radius:10px"><strong>ส่งของขวัญ</strong><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">${giftBtns}</div></div>
@@ -389,17 +393,17 @@ function renderChatPage(me, matchId, info = '') {
         </div>
       </form>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <form method="POST" action="/chat/${matchId}/block"><button class="btn" type="submit">⛔ Block</button></form>
-        <form method="POST" action="/chat/${matchId}/report"><button class="btn" type="submit">🚩 Report</button></form>
+        <form method="POST" action="/chat/${matchId}/block"><button class="btn btn-warn" type="submit">⛔ บล็อก</button></form>
+        <form method="POST" action="/chat/${matchId}/report"><button class="btn btn-danger" type="submit">🚩 รายงาน</button></form>
       </div>
     </main>
   `);
 }
 
 function renderAdminLoginPage(error = '') {
-  return htmlPage('Admin Login', `
+  return htmlPage('เข้าสู่ระบบผู้ดูแล', `
     <main class="card" style="display:grid;gap:12px;max-width:520px">
-      <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">Admin Login</h2><a class="btn" href="/">หน้าแรก</a></div>
+      <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">เข้าสู่ระบบผู้ดูแล</h2><a class="btn btn-menu" href="/">หน้าแรก</a></div>
       ${error ? `<div class="err">${error}</div>` : ''}
       <form method="POST" action="/admin/login" style="display:grid;gap:10px">
         <div><label>Username</label><input name="username" required /></div>
@@ -414,14 +418,14 @@ function adminShell(title, body) {
   return htmlPage(title, `
     <main class="card" style="display:grid;gap:12px">
       <nav class="card" style="padding:10px;border-radius:12px;display:flex;gap:8px;flex-wrap:wrap">
-        <a class="btn" href="/admin/dashboard">Dashboard</a>
-        <a class="btn" href="/admin/members">สมาชิก</a>
-        <a class="btn" href="/admin/vip">VIP</a>
-        <a class="btn" href="/admin/coins">เหรียญ</a>
-        <a class="btn" href="/admin/frames">กรอบ</a>
-        <a class="btn" href="/admin/reports">รายงาน</a>
-        <a class="btn" href="/admin/threads">กระทู้</a>
-        <a class="btn" href="/admin/logout">Logout</a>
+        <a class="btn btn-menu" href="/admin/dashboard">แดชบอร์ด</a>
+        <a class="btn btn-menu" href="/admin/members">สมาชิก</a>
+        <a class="btn btn-success" href="/admin/vip">VIP</a>
+        <a class="btn btn-menu" href="/admin/coins">เหรียญ</a>
+        <a class="btn btn-menu" href="/admin/frames">กรอบ</a>
+        <a class="btn btn-warn" href="/admin/reports">รายงาน</a>
+        <a class="btn btn-menu" href="/admin/threads">กระทู้</a>
+        <a class="btn btn-danger" href="/admin/logout">ออกจากระบบ</a>
       </nav>
       ${body}
     </main>
