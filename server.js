@@ -267,10 +267,15 @@ function registerPage(error = '', info = '') {
           <div><label>Username</label><input name="username" required /></div>
           <div><label>Email</label><input type="email" name="email" required /></div>
           <div><label>Password</label><input type="password" name="password" required /></div>
-          <div><label>เพศ</label><select name="gender"><option value="male">male</option><option value="female">female</option><option value="other">other</option></select></div>
+          <div><label>เพศ</label><select name="gender"><option value="male">ชาย</option><option value="female">หญิง</option><option value="other">อื่นๆ</option></select></div>
           <div><label>อายุ</label><input type="number" min="18" max="99" name="age" required /></div>
-          <div><label>จังหวัด</label><input name="province" required /></div>
-          <div><label>เพศที่ต้องการหา</label><select name="lookingFor"><option value="male">male</option><option value="female">female</option><option value="all">all</option></select></div>
+          <div><label>จังหวัด</label><select name="province" required>
+            <option value="กรุงเทพมหานคร">กรุงเทพมหานคร</option><option value="นนทบุรี">นนทบุรี</option><option value="ปทุมธานี">ปทุมธานี</option><option value="สมุทรปราการ">สมุทรปราการ</option>
+            <option value="เชียงใหม่">เชียงใหม่</option><option value="เชียงราย">เชียงราย</option><option value="ขอนแก่น">ขอนแก่น</option><option value="อุดรธานี">อุดรธานี</option>
+            <option value="นครราชสีมา">นครราชสีมา</option><option value="ชลบุรี">ชลบุรี</option><option value="ระยอง">ระยอง</option><option value="ภูเก็ต">ภูเก็ต</option>
+            <option value="สงขลา">สงขลา</option><option value="สุราษฎร์ธานี">สุราษฎร์ธานี</option><option value="นครศรีธรรมราช">นครศรีธรรมราช</option><option value="อื่นๆ">อื่นๆ</option>
+          </select></div>
+          <div><label>เพศที่ต้องการหา</label><select name="lookingFor"><option value="male">ชาย</option><option value="female">หญิง</option><option value="all">ทั้งหมด</option></select></div>
         </div>
         <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" type="submit">สมัครสมาชิก</button></div>
       </form>
@@ -575,10 +580,51 @@ function renderAdminDashboard(query = {}) {
   `);
 }
 
-function renderAdminMembers() {
+function renderAdminMembers(query = {}) {
   const users = readJson(usersFile);
-  const rows = users.map((u)=>`<tr><td>${u.username}</td><td>${u.email}</td><td>${u.vipStatus ? 'VIP':'Free'}</td><td>${u.coins||0}</td><td>${u.location||''}</td></tr>`).join('');
-  return adminShell('จัดการสมาชิก', `<h2 style="margin:0">จัดการสมาชิก</h2><div style="overflow:auto"><table><thead><tr><th>Username</th><th>Email</th><th>Plan</th><th>Coins</th><th>Location</th></tr></thead><tbody>${rows||'<tr><td colspan="5">ไม่มีข้อมูล</td></tr>'}</tbody></table></div>`);
+  const gender = String(query.gender || 'all').trim().toLowerCase();
+  const minAge = Number(query.minAge || 18);
+  const maxAge = Number(query.maxAge || 99);
+  const province = String(query.province || '').trim().toLowerCase();
+  const plan = String(query.plan || 'all').trim().toLowerCase();
+  const q = String(query.q || '').trim().toLowerCase();
+
+  const filtered = users.filter((u) => {
+    if (gender !== 'all' && String(u.gender || '').toLowerCase() !== gender) return false;
+    const age = Number(u.age || 0);
+    if (age && (age < minAge || age > maxAge)) return false;
+    if (province && !String(u.location || '').toLowerCase().includes(province)) return false;
+    if (plan === 'vip' && !u.vipStatus) return false;
+    if (plan === 'free' && u.vipStatus) return false;
+    if (q) {
+      const blob = `${u.username || ''} ${u.email || ''} ${u.location || ''}`.toLowerCase();
+      if (!blob.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const rows = filtered
+    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
+    .map((u)=>`<tr><td>${u.username}</td><td>${u.email}</td><td>${u.gender || '-'}</td><td>${u.age || '-'}</td><td>${u.vipStatus ? 'VIP':'Free'}</td><td>${u.coins||0}</td><td>${u.location||''}</td><td>${new Date(Number(u.createdAt || Date.now())).toLocaleDateString('th-TH')}</td></tr>`)
+    .join('');
+
+  return adminShell('จัดการสมาชิก', `
+    <h2 style="margin:0">จัดการสมาชิก</h2>
+    <section class="card" style="padding:12px;border-radius:12px;display:grid;gap:10px">
+      <strong>ฟิลเตอร์ข้อมูลสมาชิก</strong>
+      <form method="GET" action="/admin/members" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+        <div style="min-width:140px"><label>เพศ</label><select name="gender"><option value="all" ${gender==='all'?'selected':''}>ทั้งหมด</option><option value="male" ${gender==='male'?'selected':''}>ชาย</option><option value="female" ${gender==='female'?'selected':''}>หญิง</option><option value="other" ${gender==='other'?'selected':''}>อื่นๆ</option></select></div>
+        <div style="width:110px"><label>อายุต่ำสุด</label><input type="number" min="18" max="99" name="minAge" value="${minAge}" /></div>
+        <div style="width:110px"><label>อายุสูงสุด</label><input type="number" min="18" max="99" name="maxAge" value="${maxAge}" /></div>
+        <div style="min-width:160px"><label>จังหวัด</label><input name="province" value="${query.province || ''}" placeholder="เช่น กรุงเทพฯ" /></div>
+        <div style="min-width:120px"><label>แพ็กเกจ</label><select name="plan"><option value="all" ${plan==='all'?'selected':''}>ทั้งหมด</option><option value="vip" ${plan==='vip'?'selected':''}>VIP</option><option value="free" ${plan==='free'?'selected':''}>Free</option></select></div>
+        <div style="min-width:170px"><label>ค้นหา</label><input name="q" value="${query.q || ''}" placeholder="username/email" /></div>
+        <div style="display:flex;gap:8px"><button class="btn" type="submit">กรอง</button><a class="btn" href="/admin/members">ล้างค่า</a></div>
+      </form>
+      <div class="muted">ผลลัพธ์: ${filtered.length} รายการ</div>
+    </section>
+    <div style="overflow:auto"><table><thead><tr><th>Username</th><th>Email</th><th>เพศ</th><th>อายุ</th><th>Plan</th><th>Coins</th><th>Location</th><th>สมัครเมื่อ</th></tr></thead><tbody>${rows||'<tr><td colspan="8">ไม่มีข้อมูล</td></tr>'}</tbody></table></div>
+  `);
 }
 
 function renderAdminVip() {
