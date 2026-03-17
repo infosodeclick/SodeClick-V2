@@ -245,14 +245,7 @@ function homePage() {
         <div style="font-weight:800">SodeClick V2</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <a class="btn btn-primary" href="/register">สมัครสมาชิก</a>
-          <details class="menu-dropdown">
-            <summary class="btn btn-menu">เข้าสู่ระบบ ▾</summary>
-            <div class="menu-panel">
-              <a class="btn btn-menu" href="/login">เข้าสู่ระบบด้วยรหัสผ่าน</a>
-              <a class="btn btn-warn" href="/forgot-password">ลืมรหัสผ่าน</a>
-              <a class="btn btn-success" href="/auth/google">เข้าสู่ระบบด้วย Google</a>
-            </div>
-          </details>
+          <a class="btn btn-menu" href="/login">เข้าสู่ระบบ</a>
         </div>
       </nav>
       <section class="card" style="padding:16px;border-radius:12px">
