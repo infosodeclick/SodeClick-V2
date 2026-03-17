@@ -7,6 +7,8 @@ const { handleProfileRoutes } = require('./modules/profile/routes');
 const { handleMatchRoutes } = require('./modules/match/routes');
 const { handleCommerceRoutes } = require('./modules/commerce/routes');
 const { handleChatRoutes } = require('./modules/chat/routes');
+const { handleBoardRoutes } = require('./modules/board/routes');
+const { handleSecurityAdminRoutes } = require('./modules/security-admin/routes');
 
 const port = process.env.PORT || 3000;
 const dataDir = path.join(__dirname, 'data');
@@ -741,8 +743,10 @@ const server = http.createServer(async (req, res) => {
     giftsFile,
     reportsFile,
     blocksFile,
+    boardPostsFile,
     coinTxFile,
     userSessions,
+    adminSessions,
     renderRegisterPage: registerPage,
     renderVerifyPage: verifyPage,
     renderLoginPage: loginPage,
@@ -753,10 +757,21 @@ const server = http.createServer(async (req, res) => {
     renderWalletPage,
     renderVipPage,
     renderShopPage,
+    renderBoardPage,
+    renderSecurityPage,
+    renderAdminLoginPage,
+    renderAdminDashboard,
+    renderAdminMembers,
+    renderAdminVip,
+    renderAdminCoins,
+    renderAdminFrames,
+    renderAdminReports,
+    renderAdminThreads,
     isSpamAction,
     containsBlockedWords,
     frameTxFile,
     getSessionUser,
+    getAdminSession,
     createUserId: () => `USR${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
   };
 
@@ -764,6 +779,8 @@ const server = http.createServer(async (req, res) => {
   if (await handleProfileRoutes({ req, res, url, deps })) return;
   if (await handleMatchRoutes({ req, res, url, deps })) return;
   if (await handleChatRoutes({ req, res, url, deps })) return;
+  if (await handleBoardRoutes({ req, res, url, deps })) return;
+  if (await handleSecurityAdminRoutes({ req, res, url, deps })) return;
   if (await handleCommerceRoutes({ req, res, url, deps })) return;
 
   if (url.pathname === '/health') {
