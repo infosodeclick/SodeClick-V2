@@ -496,12 +496,43 @@ function adminShell(title, body) {
   `);
 }
 
-function renderAdminDashboard() {
+function renderAdminDashboard(query = {}) {
   const users = readJson(usersFile);
   const vipCount = users.filter((u) => u.vipStatus).length;
   const tx = readJson(coinTxFile);
   const reports = readJson(reportsFile);
   const posts = readJson(boardPostsFile);
+
+  const parseDateStart = (s) => {
+    if (!s) return null;
+    const d = new Date(`${s}T00:00:00`);
+    return Number.isNaN(d.getTime()) ? null : d.getTime();
+  };
+  const parseDateEnd = (s) => {
+    if (!s) return null;
+    const d = new Date(`${s}T23:59:59.999`);
+    return Number.isNaN(d.getTime()) ? null : d.getTime();
+  };
+
+  const from = String(query.from || '').trim();
+  const to = String(query.to || '').trim();
+  const fromTs = parseDateStart(from);
+  const toTs = parseDateEnd(to);
+
+  const userInRange = users.filter((u) => {
+    const ts = Number(u.createdAt || 0);
+    if (!ts) return false;
+    if (fromTs && ts < fromTs) return false;
+    if (toTs && ts > toTs) return false;
+    return true;
+  });
+
+  const userRows = userInRange
+    .sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0))
+    .slice(0, 300)
+    .map((u) => `<tr><td>${new Date(Number(u.createdAt || Date.now())).toLocaleString('th-TH')}</td><td>${u.username}</td><td>${u.email || '-'}</td><td>${u.role || 'member'}</td><td>${u.location || '-'}</td></tr>`)
+    .join('');
+
   return adminShell('Admin Dashboard', `
     <h2 style="margin:0">Admin Dashboard</h2>
     <section class="grid">
@@ -510,6 +541,17 @@ function renderAdminDashboard() {
       <div class="card" style="padding:12px;border-radius:12px"><div class="muted">ธุรกรรมเหรียญ</div><div style="font-size:28px;font-weight:800">${tx.length}</div></div>
       <div class="card" style="padding:12px;border-radius:12px"><div class="muted">รายงานผู้ใช้</div><div style="font-size:28px;font-weight:800">${reports.length}</div></div>
       <div class="card" style="padding:12px;border-radius:12px"><div class="muted">กระทู้ทั้งหมด</div><div style="font-size:28px;font-weight:800">${posts.length}</div></div>
+    </section>
+
+    <section class="card" style="padding:12px;border-radius:12px;display:grid;gap:10px">
+      <strong>ฟิลเตอร์สมาชิกตามช่วงวันที่สมัคร</strong>
+      <form method="GET" action="/admin/dashboard" class="grid">
+        <div><label>จากวันที่</label><input type="date" name="from" value="${from}" /></div>
+        <div><label>ถึงวันที่</label><input type="date" name="to" value="${to}" /></div>
+        <div style="display:flex;align-items:flex-end;gap:8px"><button class="btn btn-primary" type="submit">กรองข้อมูล</button><a class="btn" href="/admin/dashboard">ล้างค่า</a></div>
+      </form>
+      <div class="muted">ผลลัพธ์: พบสมาชิก ${userInRange.length} ราย</div>
+      <div style="overflow:auto"><table><thead><tr><th>วันที่สมัคร</th><th>Username</th><th>Email</th><th>Role</th><th>จังหวัด</th></tr></thead><tbody>${userRows || '<tr><td colspan="5">ไม่พบสมาชิกในช่วงวันที่เลือก</td></tr>'}</tbody></table></div>
     </section>
   `);
 }

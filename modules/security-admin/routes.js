@@ -63,7 +63,12 @@ async function handleSecurityAdminRoutes(ctx) {
       res.end();
       return true;
     }
-    if (url.pathname === '/admin/dashboard') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminDashboard()); return true; }
+    if (url.pathname === '/admin/dashboard') {
+      const query = Object.fromEntries(url.searchParams.entries());
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(renderAdminDashboard(query));
+      return true;
+    }
     if (url.pathname === '/admin/members') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminMembers()); return true; }
     if (url.pathname === '/admin/vip') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminVip()); return true; }
     if (url.pathname === '/admin/coins') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); res.end(renderAdminCoins()); return true; }
