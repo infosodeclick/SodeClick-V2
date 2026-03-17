@@ -203,11 +203,11 @@ function htmlPage(title, body) {
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>${title}</title>
   <style>
-    :root{--bg:#f8fafc;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e5e7eb;--brand1:#60a5fa;--brand2:#f9a8d4}
+    :root{--bg:#fff7fb;--card:#ffffff;--text:#0f172a;--muted:#6b7280;--line:#f3dce8;--brand1:#f9a8d4;--brand2:#fbcfe8}
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:linear-gradient(180deg,#fff7fb 0%,#ffeef7 45%,#fff4fa 100%);color:var(--text)}
     .wrap{max-width:1100px;margin:3vh auto 0;padding:16px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 10px 24px rgba(15,23,42,.06)}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 10px 24px rgba(244,114,182,.12)}
     .title{margin:0 0 8px;font-size:28px;line-height:1.2;letter-spacing:-.2px}
     .muted{color:var(--muted);line-height:1.5}
     .btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:1px solid #d1d5db;background:#fff;padding:8px 12px;border-radius:10px;color:#111827;font-weight:700;cursor:pointer;transition:.15s ease;white-space:nowrap}
