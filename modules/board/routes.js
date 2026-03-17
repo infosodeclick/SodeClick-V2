@@ -25,14 +25,16 @@ async function handleBoardRoutes(ctx) {
     const me = getSessionUser(req);
     if (!me) { res.writeHead(302, { Location: '/login' }); res.end(); return true; }
     const body = parseForm(await parseBody(req));
-    const title = String(body.title || '').trim();
+    const titleInput = String(body.title || '').trim();
     const content = String(body.content || '').trim();
+    const imageUrl = String(body.imageUrl || '').trim();
     const category = String(body.category || 'general').trim();
-    if (!title || !content) {
+    if (!content && !imageUrl) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(renderBoardPage(me, {}, 'กรอกหัวข้อและเนื้อหาให้ครบ'));
+      res.end(renderBoardPage(me, {}, 'กรุณาพิมพ์ข้อความหรือใส่ลิงก์รูปอย่างน้อยหนึ่งอย่าง'));
       return true;
     }
+    const title = titleInput || (content ? content.slice(0, 48) : 'โพสต์ใหม่');
     if (isSpamAction(`board:new:${me.username}`, 3000)) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(renderBoardPage(me, {}, 'คุณโพสต์ถี่เกินไป กรุณารอสักครู่'));
@@ -44,7 +46,7 @@ async function handleBoardRoutes(ctx) {
       return true;
     }
     const posts = readJson(boardPostsFile);
-    posts.push({ id: `P${Date.now()}`, author: me.username, title, content, category, likes: 0, comments: [], reports: 0, pinned: false, createdAt: Date.now() });
+    posts.push({ id: `P${Date.now()}`, author: me.username, title, content, imageUrl, category, likes: 0, comments: [], reports: 0, pinned: false, createdAt: Date.now() });
     writeJson(boardPostsFile, posts);
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(renderBoardPage(me, {}, 'โพสต์กระทู้สำเร็จ'));

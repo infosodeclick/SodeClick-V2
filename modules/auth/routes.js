@@ -162,7 +162,7 @@ async function handleAuthRoutes(ctx) {
 
     const sid = require('crypto').randomBytes(24).toString('hex');
     userSessions.set(sid, { email: user.email, username: user.username, createdAt: Date.now() });
-    res.writeHead(302, { Location: '/profile', 'Set-Cookie': `sid=${sid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=28800` });
+    res.writeHead(302, { Location: '/board', 'Set-Cookie': `sid=${sid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=28800` });
     res.end();
     return true;
   }
