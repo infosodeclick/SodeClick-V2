@@ -472,7 +472,7 @@ function renderAdminLoginPage(error = '') {
       <form method="POST" action="/admin/login" style="display:grid;gap:10px">
         <div><label>Username</label><input name="username" required /></div>
         <div><label>Password</label><input type="password" name="password" required /></div>
-        <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" type="submit">เข้าสู่ระบบหลังบ้าน</button></div>
+        <div style="display:flex;justify-content:flex-end"><button class="btn" type="submit">เข้าสู่ระบบหลังบ้าน</button></div>
       </form>
     </main>
   `);
@@ -482,13 +482,13 @@ function adminShell(title, body) {
   return htmlPage(title, `
     <main class="card" style="display:grid;gap:12px">
       <nav class="card" style="padding:10px;border-radius:12px;display:flex;gap:8px;flex-wrap:wrap">
-        <a class="btn btn-menu" href="/admin/dashboard">แดชบอร์ด</a>
-        <a class="btn btn-menu" href="/admin/members">สมาชิก</a>
-        <a class="btn btn-success" href="/admin/vip">VIP</a>
-        <a class="btn btn-menu" href="/admin/coins">เหรียญ</a>
-        <a class="btn btn-menu" href="/admin/frames">กรอบ</a>
-        <a class="btn btn-warn" href="/admin/reports">รายงาน</a>
-        <a class="btn btn-menu" href="/admin/threads">กระทู้</a>
+        <a class="btn" href="/admin/dashboard">แดชบอร์ด</a>
+        <a class="btn" href="/admin/members">สมาชิก</a>
+        <a class="btn" href="/admin/vip">VIP</a>
+        <a class="btn" href="/admin/coins">เหรียญ</a>
+        <a class="btn" href="/admin/frames">กรอบ</a>
+        <a class="btn" href="/admin/reports">รายงาน</a>
+        <a class="btn" href="/admin/threads">กระทู้</a>
         <a class="btn btn-danger" href="/admin/logout">ออกจากระบบ</a>
       </nav>
       ${body}
@@ -533,6 +533,21 @@ function renderAdminDashboard(query = {}) {
     .map((u) => `<tr><td>${new Date(Number(u.createdAt || Date.now())).toLocaleString('th-TH')}</td><td>${u.username}</td><td>${u.email || '-'}</td><td>${u.role || 'member'}</td><td>${u.location || '-'}</td></tr>`)
     .join('');
 
+  const byDay = {};
+  userInRange.forEach((u) => {
+    const d = new Date(Number(u.createdAt || 0));
+    if (Number.isNaN(d.getTime())) return;
+    const key = d.toISOString().slice(0, 10);
+    byDay[key] = (byDay[key] || 0) + 1;
+  });
+  const dayKeys = Object.keys(byDay).sort();
+  const maxDay = dayKeys.length ? Math.max(...dayKeys.map((k) => byDay[k])) : 1;
+  const chartBars = dayKeys.map((k) => {
+    const v = byDay[k];
+    const h = Math.max(10, Math.round((v / maxDay) * 120));
+    return `<div title="${k}: ${v} คน" style="display:grid;gap:6px;justify-items:center"><div style="width:18px;height:${h}px;background:#93c5fd;border:1px solid #60a5fa;border-radius:6px 6px 0 0"></div><div class="muted" style="font-size:11px">${k.slice(5)}</div></div>`;
+  }).join('');
+
   return adminShell('Admin Dashboard', `
     <h2 style="margin:0">Admin Dashboard</h2>
     <section class="grid">
@@ -548,9 +563,13 @@ function renderAdminDashboard(query = {}) {
       <form method="GET" action="/admin/dashboard" class="grid">
         <div><label>จากวันที่</label><input type="date" name="from" value="${from}" /></div>
         <div><label>ถึงวันที่</label><input type="date" name="to" value="${to}" /></div>
-        <div style="display:flex;align-items:flex-end;gap:8px"><button class="btn btn-primary" type="submit">กรองข้อมูล</button><a class="btn" href="/admin/dashboard">ล้างค่า</a></div>
+        <div style="display:flex;align-items:flex-end;gap:8px"><button class="btn" type="submit">กรองข้อมูล</button><a class="btn" href="/admin/dashboard">ล้างค่า</a></div>
       </form>
       <div class="muted">ผลลัพธ์: พบสมาชิก ${userInRange.length} ราย</div>
+      <section class="card" style="padding:10px;border-radius:10px">
+        <strong>กราฟจำนวนผู้สมัครตามวัน</strong>
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:flex-end;overflow:auto;padding-bottom:4px;min-height:150px">${chartBars || '<span class="muted">ไม่มีข้อมูลในช่วงวันที่เลือก</span>'}</div>
+      </section>
       <div style="overflow:auto"><table><thead><tr><th>วันที่สมัคร</th><th>Username</th><th>Email</th><th>Role</th><th>จังหวัด</th></tr></thead><tbody>${userRows || '<tr><td colspan="5">ไม่พบสมาชิกในช่วงวันที่เลือก</td></tr>'}</tbody></table></div>
     </section>
   `);
