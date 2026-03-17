@@ -7,6 +7,7 @@ async function handleAuthRoutes(ctx) {
     usersFile,
     pendingFile,
     userSessions,
+    adminSessions,
     renderRegisterPage,
     renderVerifyPage,
     renderLoginPage,
@@ -34,9 +35,18 @@ async function handleAuthRoutes(ctx) {
   }
 
   if (url.pathname === '/logout' && req.method === 'GET') {
-    const sid = deps.parseCookies(req).sid;
+    const cookies = deps.parseCookies(req);
+    const sid = cookies.sid;
+    const aid = cookies.aid;
     if (sid) userSessions.delete(sid);
-    res.writeHead(302, { Location: '/login', 'Set-Cookie': 'sid=; Path=/; HttpOnly; Max-Age=0' });
+    if (aid) adminSessions.delete(aid);
+    res.writeHead(302, {
+      Location: '/login',
+      'Set-Cookie': [
+        'sid=; Path=/; HttpOnly; Max-Age=0',
+        'aid=; Path=/; HttpOnly; Max-Age=0',
+      ],
+    });
     res.end();
     return true;
   }
@@ -138,6 +148,15 @@ async function handleAuthRoutes(ctx) {
     if (!user) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(renderLoginPage('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'));
+      return true;
+    }
+
+    const isAdmin = user.role === 'admin' || user.username === 'admin';
+    if (isAdmin) {
+      const aid = require('crypto').randomBytes(24).toString('hex');
+      adminSessions.set(aid, { username: user.username, role: 'admin', at: Date.now() });
+      res.writeHead(302, { Location: '/admin/dashboard', 'Set-Cookie': `aid=${aid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=28800` });
+      res.end();
       return true;
     }
 
