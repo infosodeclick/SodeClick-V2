@@ -146,8 +146,9 @@ function htmlPage(title, body) {
     .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 10px 24px rgba(15,23,42,.06)}
     .title{margin:0 0 8px;font-size:28px;line-height:1.2}
     .muted{color:var(--muted)}
-    .btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:1px solid #d1d5db;background:#fff;padding:8px 12px;border-radius:10px;color:#111827;font-weight:700;cursor:pointer;transition:.15s ease}
+    .btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border:1px solid #d1d5db;background:#fff;padding:8px 12px;border-radius:10px;color:#111827;font-weight:700;cursor:pointer;transition:.15s ease;white-space:nowrap}
     .btn:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(15,23,42,.1)}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .btn-primary{border:0;color:#fff;background:linear-gradient(135deg,var(--brand1),var(--brand2))}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
     input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:10px;font:inherit;background:#fff}
@@ -179,7 +180,7 @@ function homePage() {
           <a class="btn btn-primary" href="/register">สมัครสมาชิก</a>
           <a class="btn" href="/login">เข้าสู่ระบบ</a>
           <a class="btn" href="/forgot-password">ลืมรหัสผ่าน</a>
-          <a class="btn" href="/auth/google">Google Login</a>
+          <a class="btn" href="/auth/google">เข้าสู่ระบบด้วย Google</a>
         </div>
       </nav>
       <section class="card" style="padding:16px;border-radius:12px">
@@ -266,7 +267,7 @@ function profilePage(user, message = '') {
     <main class="card" style="display:grid;gap:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
         <h2 style="margin:0">โปรไฟล์ผู้ใช้</h2>
-        <div style="display:flex;gap:8px"><a class="btn" href="/security">Security</a><a class="btn" href="/board">Webboard</a><a class="btn" href="/vip">VIP</a><a class="btn" href="/wallet">Wallet</a><a class="btn" href="/match">Match</a><a class="btn" href="/">หน้าแรก</a><a class="btn" href="/logout">Logout</a></div>
+        <div class="toolbar"><a class="btn" href="/security">ความปลอดภัย</a><a class="btn" href="/board">เว็บบอร์ด</a><a class="btn" href="/vip">VIP</a><a class="btn" href="/wallet">กระเป๋า</a><a class="btn" href="/match">แมตช์</a><a class="btn" href="/">หน้าแรก</a><a class="btn" href="/logout">ออกจากระบบ</a></div>
       </div>
       ${message ? `<div class="ok">${message}</div>` : ''}
       <section class="card" style="padding:14px;border-radius:12px">
@@ -324,9 +325,9 @@ function renderMatchPage(me, query, info = '') {
       </div>
       <div class="muted" style="margin-top:4px">@${u.username} • ${u.gender || 'other'} • ${u.age || '-'}</div>
       <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-        <form method="POST" action="/match/action"><input type="hidden" name="target" value="${u.username}"/><input type="hidden" name="type" value="like"/><button class="btn btn-primary" type="submit">❤️ Like</button></form>
-        <form method="POST" action="/match/action"><input type="hidden" name="target" value="${u.username}"/><input type="hidden" name="type" value="super_like"/><button class="btn" type="submit">⭐ Super Like</button></form>
-        <form method="POST" action="/match/action"><input type="hidden" name="target" value="${u.username}"/><input type="hidden" name="type" value="pass"/><button class="btn" type="submit">❌ Pass</button></form>
+        <form method="POST" action="/match/action"><input type="hidden" name="target" value="${u.username}"/><input type="hidden" name="type" value="like"/><button class="btn btn-primary" type="submit">❤️ ไลก์</button></form>
+        <form method="POST" action="/match/action"><input type="hidden" name="target" value="${u.username}"/><input type="hidden" name="type" value="super_like"/><button class="btn" type="submit">⭐ ซูเปอร์ไลก์</button></form>
+        <form method="POST" action="/match/action"><input type="hidden" name="target" value="${u.username}"/><input type="hidden" name="type" value="pass"/><button class="btn" type="submit">❌ ข้าม</button></form>
       </div>
     </div>
   `).join('');
@@ -336,7 +337,7 @@ function renderMatchPage(me, query, info = '') {
 
   return htmlPage('ค้นหาและแมตช์', `
     <main class="card" style="display:grid;gap:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">ค้นหาและแมตช์</h2><div style="display:flex;gap:8px"><a class="btn" href="/profile">โปรไฟล์</a><a class="btn" href="/logout">Logout</a></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">ค้นหาและแมตช์</h2><div class="toolbar"><a class="btn" href="/profile">โปรไฟล์</a><a class="btn" href="/logout">ออกจากระบบ</a></div></div>
       ${info ? `<div class="ok">${info}</div>` : ''}
       <section class="card" style="padding:12px;border-radius:12px">
         <form method="GET" action="/match" class="grid">
@@ -350,10 +351,10 @@ function renderMatchPage(me, query, info = '') {
       </section>
       <section class="grid">${cards || '<div class="muted">ไม่พบผู้ใช้ตามเงื่อนไข</div>'}</section>
       <section class="card" style="padding:12px;border-radius:12px"><strong>คนที่กดไลก์เรา</strong><div class="muted" style="margin-top:6px">${me.vipStatus ? (likedMe.length ? likedMe.map((x) => x.from).join(', ') : 'ยังไม่มี') : 'ฟีเจอร์นี้สำหรับ VIP'}</div></section>
-      <section class="card" style="padding:12px;border-radius:12px"><strong>Match ของฉัน</strong><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">${myMatches.length ? myMatches.map((m) => `<a class=\"btn\" href=\"/chat/${m.id}\">💬 ${m.userA===me.username?m.userB:m.userA}</a>`).join(' ') : '<span class="muted">ยังไม่มี match</span>'}</div></section>
+      <section class="card" style="padding:12px;border-radius:12px"><strong>แมตช์ของฉัน</strong><div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">${myMatches.length ? myMatches.map((m) => `<a class=\"btn\" href=\"/chat/${m.id}\">💬 ${m.userA===me.username?m.userB:m.userA}</a>`).join(' ') : '<span class="muted">ยังไม่มีแมตช์</span>'}</div></section>
       <section class="card" style="padding:12px;border-radius:12px">
-        <strong>Boost Profile</strong>
-        <form method="POST" action="/match/boost" style="margin-top:8px"><button class="btn btn-primary" type="submit">🚀 Boost โปรไฟล์ (demo)</button></form>
+        <strong>Boost โปรไฟล์</strong>
+        <form method="POST" action="/match/boost" style="margin-top:8px"><button class="btn btn-primary" type="submit">🚀 บูสต์โปรไฟล์ (เดโม)</button></form>
       </section>
     </main>
   `);
@@ -376,7 +377,7 @@ function renderChatPage(me, matchId, info = '') {
 
   return htmlPage('แชท', `
     <main class="card" style="display:grid;gap:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">แชทกับ ${partner}</h2><div style="display:flex;gap:8px"><a class="btn" href="/match">กลับ Match</a><a class="btn" href="/logout">Logout</a></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">แชทกับ ${partner}</h2><div class="toolbar"><a class="btn" href="/match">กลับหน้าแมตช์</a><a class="btn" href="/logout">ออกจากระบบ</a></div></div>
       ${info ? `<div class="ok">${info}</div>` : ''}
       <div style="display:grid;gap:8px">${rows || '<div class="muted">ยังไม่มีข้อความ</div>'}</div>
       <div class="card" style="padding:10px;border-radius:10px"><strong>ส่งของขวัญ</strong><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">${giftBtns}</div></div>
