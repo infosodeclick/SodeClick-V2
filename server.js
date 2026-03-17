@@ -163,8 +163,12 @@ function htmlPage(title, body) {
     section.card{padding:14px !important;border-radius:12px !important}
     .ok{border:1px solid #86efac;background:#f0fdf4;color:#166534;padding:10px;border-radius:10px}
     .err{border:1px solid #fecaca;background:#fef2f2;color:#991b1b;padding:10px;border-radius:10px}
-    table{width:100%;border-collapse:collapse;font-size:14px}
-    th,td{border-bottom:1px solid #eef2f7;padding:8px;text-align:left;vertical-align:top}
+    .chip{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
+    .chip-ok{background:#ecfdf3;color:#166534;border:1px solid #86efac}
+    .chip-no{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+    table{width:100%;border-collapse:collapse;font-size:14px;background:#fff;border-radius:10px;overflow:hidden}
+    th,td{border-bottom:1px solid #eef2f7;padding:10px;text-align:left;vertical-align:top}
+    tr:hover td{background:#fafcff}
     th{background:#f8fafc;color:#334155;position:sticky;top:0}
     nav.card{position:sticky;top:10px;z-index:20}
     @media (max-width:700px){
@@ -284,10 +288,10 @@ function profilePage(user, message = '') {
         <div style="font-size:24px;font-weight:800">${user.displayName || user.username}</div>
         <div class="muted">@${user.username} • ${user.email}</div>
         <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-          ${user.verifiedBadge ? '<span class="ok" style="padding:4px 8px">Verified</span>' : ''}
-          ${user.vipStatus ? '<span class="ok" style="padding:4px 8px">VIP</span>' : ''}
-          ${user.emailVerified ? '<span class="ok" style="padding:4px 8px">Email Verified</span>' : '<span class="err" style="padding:4px 8px">Email Not Verified</span>'}
-          ${user.phoneVerified ? '<span class="ok" style="padding:4px 8px">Phone Verified</span>' : '<span class="err" style="padding:4px 8px">Phone Not Verified</span>'}
+          ${user.verifiedBadge ? '<span class="chip chip-ok">ยืนยันตัวตนแล้ว</span>' : ''}
+          ${user.vipStatus ? '<span class="chip chip-ok">VIP</span>' : ''}
+          ${user.emailVerified ? '<span class="chip chip-ok">อีเมลยืนยันแล้ว</span>' : '<span class="chip chip-no">อีเมลยังไม่ยืนยัน</span>'}
+          ${user.phoneVerified ? '<span class="chip chip-ok">เบอร์ยืนยันแล้ว</span>' : '<span class="chip chip-no">เบอร์ยังไม่ยืนยัน</span>'}
         </div>
       </section>
       <form method="POST" action="/profile" style="display:grid;gap:10px">
@@ -448,9 +452,9 @@ function renderAdminDashboard() {
     <h2 style="margin:0">Admin Dashboard</h2>
     <section class="grid">
       <div class="card" style="padding:12px;border-radius:12px"><div class="muted">สมาชิกทั้งหมด</div><div style="font-size:28px;font-weight:800">${users.length}</div></div>
-      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">VIP Users</div><div style="font-size:28px;font-weight:800">${vipCount}</div></div>
-      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">Coin Transactions</div><div style="font-size:28px;font-weight:800">${tx.length}</div></div>
-      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">Report Users</div><div style="font-size:28px;font-weight:800">${reports.length}</div></div>
+      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">ผู้ใช้ VIP</div><div style="font-size:28px;font-weight:800">${vipCount}</div></div>
+      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">ธุรกรรมเหรียญ</div><div style="font-size:28px;font-weight:800">${tx.length}</div></div>
+      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">รายงานผู้ใช้</div><div style="font-size:28px;font-weight:800">${reports.length}</div></div>
       <div class="card" style="padding:12px;border-radius:12px"><div class="muted">กระทู้ทั้งหมด</div><div style="font-size:28px;font-weight:800">${posts.length}</div></div>
     </section>
   `);
