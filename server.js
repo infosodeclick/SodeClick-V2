@@ -307,15 +307,16 @@ function loginPage(error = '', info = '') {
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">เข้าสู่ระบบ</h2><a class="btn" href="/">กลับหน้าแรก</a></div>
       ${error ? `<div class="err">${error}</div>` : ''}
       ${info ? `<div class="ok">${info}</div>` : ''}
-      <form method="POST" action="/login" style="display:grid;gap:10px">
+      <form method="POST" action="/login" style="display:grid;gap:12px">
         <div><label>Email หรือ Username</label><input name="login" required /></div>
         <div><label>Password</label><input type="password" name="password" required /></div>
+        <div style="height:2px"></div>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-          <a class="btn" href="/forgot-password">ลืมรหัสผ่าน</a>
-          <button class="btn btn-primary" type="submit">เข้าสู่ระบบ</button>
+          <a class="btn btn-warn" style="min-height:42px;flex:1" href="/forgot-password">ลืมรหัสผ่าน</a>
+          <button class="btn btn-primary" style="min-height:42px;flex:1" type="submit">เข้าสู่ระบบ</button>
         </div>
       </form>
-      <a class="btn" href="/auth/google">เข้าสู่ระบบด้วย Google (demo)</a>
+      <a class="btn btn-success" style="min-height:44px;font-weight:800" href="/auth/google">🔐 เข้าสู่ระบบด้วย Google (demo)</a>
     </main>
   `);
 }
