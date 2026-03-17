@@ -550,20 +550,20 @@ function renderAdminDashboard(query = {}) {
 
   return adminShell('Admin Dashboard', `
     <h2 style="margin:0">Admin Dashboard</h2>
-    <section class="grid">
-      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">สมาชิกทั้งหมด</div><div style="font-size:28px;font-weight:800">${users.length}</div></div>
-      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">ผู้ใช้ VIP</div><div style="font-size:28px;font-weight:800">${vipCount}</div></div>
-      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">ธุรกรรมเหรียญ</div><div style="font-size:28px;font-weight:800">${tx.length}</div></div>
-      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">รายงานผู้ใช้</div><div style="font-size:28px;font-weight:800">${reports.length}</div></div>
-      <div class="card" style="padding:12px;border-radius:12px"><div class="muted">กระทู้ทั้งหมด</div><div style="font-size:28px;font-weight:800">${posts.length}</div></div>
+    <section style="display:flex;gap:10px;overflow:auto;align-items:stretch">
+      <div class="card" style="padding:12px;border-radius:12px;min-width:180px;flex:1"><div class="muted">สมาชิกทั้งหมด</div><div style="font-size:28px;font-weight:800">${users.length}</div></div>
+      <div class="card" style="padding:12px;border-radius:12px;min-width:180px;flex:1"><div class="muted">ผู้ใช้ VIP</div><div style="font-size:28px;font-weight:800">${vipCount}</div></div>
+      <div class="card" style="padding:12px;border-radius:12px;min-width:180px;flex:1"><div class="muted">ธุรกรรมเหรียญ</div><div style="font-size:28px;font-weight:800">${tx.length}</div></div>
+      <div class="card" style="padding:12px;border-radius:12px;min-width:180px;flex:1"><div class="muted">รายงานผู้ใช้</div><div style="font-size:28px;font-weight:800">${reports.length}</div></div>
+      <div class="card" style="padding:12px;border-radius:12px;min-width:180px;flex:1"><div class="muted">กระทู้ทั้งหมด</div><div style="font-size:28px;font-weight:800">${posts.length}</div></div>
     </section>
 
     <section class="card" style="padding:12px;border-radius:12px;display:grid;gap:10px">
       <strong>ฟิลเตอร์สมาชิกตามช่วงวันที่สมัคร</strong>
-      <form method="GET" action="/admin/dashboard" class="grid">
-        <div><label>จากวันที่</label><input type="date" name="from" value="${from}" /></div>
-        <div><label>ถึงวันที่</label><input type="date" name="to" value="${to}" /></div>
-        <div style="display:flex;align-items:flex-end;gap:8px"><button class="btn" type="submit">กรองข้อมูล</button><a class="btn" href="/admin/dashboard">ล้างค่า</a></div>
+      <form method="GET" action="/admin/dashboard" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+        <div style="min-width:200px;flex:1"><label>จากวันที่</label><input type="date" name="from" value="${from}" /></div>
+        <div style="min-width:200px;flex:1"><label>ถึงวันที่</label><input type="date" name="to" value="${to}" /></div>
+        <div style="display:flex;align-items:flex-end;gap:8px;white-space:nowrap"><button class="btn" type="submit">กรองข้อมูล</button><a class="btn" href="/admin/dashboard">ล้างค่า</a></div>
       </form>
       <div class="muted">ผลลัพธ์: พบสมาชิก ${userInRange.length} ราย</div>
       <section class="card" style="padding:10px;border-radius:10px">
