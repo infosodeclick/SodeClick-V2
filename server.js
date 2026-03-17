@@ -201,6 +201,12 @@ function htmlPage(title, body) {
     .btn-success{background:#ecfdf3;border-color:#86efac;color:#166534}
     .btn-danger{background:#fef2f2;border-color:#fecaca;color:#991b1b}
     .btn-warn{background:#fff7ed;border-color:#fdba74;color:#9a3412}
+    .menu-dropdown{position:relative;display:inline-block}
+    .menu-dropdown > summary{list-style:none}
+    .menu-dropdown > summary::-webkit-details-marker{display:none}
+    .menu-panel{position:absolute;right:0;top:calc(100% + 8px);min-width:220px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;box-shadow:0 12px 24px rgba(15,23,42,.12);display:grid;gap:6px;z-index:50}
+    .menu-panel .btn{justify-content:flex-start}
+    @media (max-width:700px){.menu-panel{right:auto;left:0;min-width:190px}}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
     input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:10px;font:inherit;background:#fff}
     label{display:block;margin-bottom:6px;font-weight:600;color:#334155}
@@ -237,11 +243,16 @@ function homePage() {
     <main class="card" style="display:grid;gap:12px">
       <nav class="card" style="padding:12px;border-radius:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between">
         <div style="font-weight:800">SodeClick V2</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <a class="btn btn-primary" href="/register">สมัครสมาชิก</a>
-          <a class="btn btn-menu" href="/login">เข้าสู่ระบบ</a>
-          <a class="btn btn-warn" href="/forgot-password">ลืมรหัสผ่าน</a>
-          <a class="btn btn-success" href="/auth/google">เข้าสู่ระบบด้วย Google</a>
+          <details class="menu-dropdown">
+            <summary class="btn btn-menu">เข้าสู่ระบบ ▾</summary>
+            <div class="menu-panel">
+              <a class="btn btn-menu" href="/login">เข้าสู่ระบบด้วยรหัสผ่าน</a>
+              <a class="btn btn-warn" href="/forgot-password">ลืมรหัสผ่าน</a>
+              <a class="btn btn-success" href="/auth/google">เข้าสู่ระบบด้วย Google</a>
+            </div>
+          </details>
         </div>
       </nav>
       <section class="card" style="padding:16px;border-radius:12px">
