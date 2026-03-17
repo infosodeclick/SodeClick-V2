@@ -265,7 +265,8 @@ function homePage() {
           <a class="btn btn-menu" href="/login">เข้าสู่ระบบ</a>
         </div>
       </nav>
-      <section class="card" style="padding:16px;border-radius:12px">
+      <section class="card" style="padding:16px;border-radius:12px;display:grid;gap:10px;justify-items:center;text-align:center">
+        <div style="font-size:72px;line-height:1">🧸</div>
         <h1 class="title">SodeClick V2</h1>
         <p class="muted">Phase A เริ่มแล้ว: ระบบสมาชิก + โปรไฟล์ (Responsive / Horizontal Navbar / Card UI)</p>
       </section>
