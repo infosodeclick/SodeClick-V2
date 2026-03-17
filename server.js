@@ -783,7 +783,7 @@ function renderBoardPage(me, q = {}, info = '') {
 
   const categoryOptions = categories.map((c) => `<option value="${c}" ${category === c ? 'selected' : ''}>${c}</option>`).join('');
 
-  return htmlPage('Webboard', `
+  return htmlPage('กระดานสนทนา', `
     <main class="card" style="display:grid;gap:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
         <h2 style="margin:0">เว็บบอร์ด</h2>
